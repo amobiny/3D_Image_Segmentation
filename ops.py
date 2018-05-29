@@ -25,17 +25,15 @@ def bias_variable(name, shape):
                            initializer=initial)
 
 
-def conv_3d(inputs, filter_size, stride, num_filters, layer_name,
-            is_train=True, batch_norm=False, add_reg=False, use_relu=True):
+def conv_3d(inputs, filter_size, num_filters, layer_name, is_train=True,
+            batch_norm=False, add_reg=False, use_relu=True):
     """
-    Create a 2D convolution layer
+    Create a 3D convolution layer
     :param inputs: input array
     :param filter_size: size of the filter
-    :param stride: filter stride
     :param num_filters: number of filters (or output feature maps)
     :param layer_name: layer name
     :param is_train: boolean to differentiate train and test (useful when applying batch normalization)
-    :param batch_norm: boolean to add the batch normalization layer (or not)
     :param add_reg: boolean to add norm-2 regularization (or not)
     :param use_relu: boolean to add ReLU non-linearity (or not)
     :return: The output array
@@ -45,15 +43,14 @@ def conv_3d(inputs, filter_size, stride, num_filters, layer_name,
         shape = [filter_size, filter_size, filter_size, num_in_channel, num_filters]
         weights = weight_variable(layer_name, shape=shape)
         tf.summary.histogram('W', weights)
-        biases = bias_variable(layer_name, [num_filters])
+        # biases = bias_variable(layer_name, [num_filters])
         layer = tf.nn.conv3d(input=inputs,
                              filter=weights,
-                             strides=[1, stride, stride, stride, 1],
+                             strides=[1, 1, 1, 1, 1],
                              padding="SAME")
         print('{}: {}'.format(layer_name, layer.get_shape()))
-        if batch_norm:
-            layer = batch_norm_wrapper(layer, is_train)
-        layer += biases
+        layer = batch_norm_wrapper(layer, is_train)
+        # layer += biases
         if use_relu:
             layer = tf.nn.relu(layer)
         if add_reg:
@@ -61,18 +58,50 @@ def conv_3d(inputs, filter_size, stride, num_filters, layer_name,
     return layer
 
 
-def max_pool(x, ksize, stride, name):
+def deconv_3d(inputs, filter_size, num_filters, layer_name, is_train=True, add_reg=False, use_relu=True):
     """
-    Create a max pooling layer
+    Create a 3D transposed-convolution layer
+    :param inputs: input array
+    :param filter_size: size of the filter
+    :param num_filters: number of filters (or output feature maps)
+    :param layer_name: layer name
+    :param is_train: boolean to differentiate train and test (useful when applying batch normalization)
+    :param add_reg: boolean to add norm-2 regularization (or not)
+    :param use_relu: boolean to add ReLU non-linearity (or not)
+    :return: The output array
+    """
+    input_shape = inputs.get_shape().as_list()
+    with tf.variable_scope(layer_name):
+        kernel_shape = [filter_size, filter_size, filter_size, num_filters, input_shape[-1]]
+        out_shape = [input_shape[0]] + list(map(lambda x: x*2, input_shape[1:-1])) + [num_filters]
+        weights = weight_variable(layer_name, shape=kernel_shape)
+        # biases = bias_variable(layer_name, [num_filters])
+        layer = tf.nn.conv3d_transpose(inputs,
+                                       filter=weights,
+                                       output_shape=out_shape,
+                                       strides=[1, 2, 2, 2, 1],
+                                       padding="SAME")
+        print('{}: {}'.format(layer_name, layer.get_shape()))
+        layer = batch_norm_wrapper(layer, is_train)
+        # layer += biases
+        if use_relu:
+            layer = tf.nn.relu(layer)
+        if add_reg:
+            tf.add_to_collection('weights', weights)
+    return layer
+
+
+def max_pool(x, ksize, name):
+    """
+    Create a 3D max-pooling layer
     :param x: input to max-pooling layer
     :param ksize: size of the max-pooling filter
-    :param stride: stride of the max-pooling filter
     :param name: layer name
     :return: The output array
     """
     maxpool = tf.nn.max_pool3d(x,
                                ksize=[1, ksize, ksize, ksize, 1],
-                               strides=[1, stride, stride, stride, 1],
+                               strides=[1, 2, 2, 2, 1],
                                padding="SAME",
                                name=name)
     print('{}: {}'.format(maxpool.name, maxpool.get_shape()))
@@ -95,7 +124,7 @@ def batch_norm_wrapper(inputs, is_training, decay=0.999, epsilon=1e-3):
 
     if is_training:
         if len(inputs.get_shape().as_list()) == 5:  # For 3D convolutional layers
-            batch_mean, batch_var = tf.nn.moments(inputs, [0, 1, 2])
+            batch_mean, batch_var = tf.nn.moments(inputs, [0, 1, 2, 3])
         else:  # For fully-connected layers
             batch_mean, batch_var = tf.nn.moments(inputs, [0])
         train_mean = tf.assign(pop_mean, pop_mean * decay + batch_mean * (1 - decay))
