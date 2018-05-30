@@ -99,13 +99,14 @@ def max_pool(x, ksize, name):
     :param name: layer name
     :return: The output array
     """
-    maxpool = tf.nn.max_pool3d(x,
-                               ksize=[1, ksize, ksize, ksize, 1],
-                               strides=[1, 2, 2, 2, 1],
-                               padding="SAME",
-                               name=name)
-    print('{}: {}'.format(maxpool.name, maxpool.get_shape()))
-    return maxpool
+    with tf.variable_scope(name):
+        maxpool = tf.nn.max_pool3d(x,
+                                   ksize=[1, ksize, ksize, ksize, 1],
+                                   strides=[1, 2, 2, 2, 1],
+                                   padding="SAME",
+                                   name=name)
+        print('{}: {}'.format(name, maxpool.get_shape()))
+        return maxpool
 
 
 def batch_norm_wrapper(inputs, is_training, decay=0.999, epsilon=1e-3):

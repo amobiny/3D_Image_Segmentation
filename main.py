@@ -4,7 +4,6 @@ from config import args
 from model import Unet_3D
 
 
-
 def main(_):
 
     if args.mode not in ['train', 'test', 'predict']:
@@ -14,12 +13,12 @@ def main(_):
         model = Unet_3D(tf.Session(), args)
         model.inference().loss_func().accuracy_func()
         if args.mode == 'train':
-            model.train
+            model.train()
         elif args.mode == 'test':
-            model.test
+            model.test()
 
 
 if __name__ == '__main__':
     # configure which gpu or cpu to use
-    # os.environ['CUDA_VISIBLE_DEVICES'] = '6'
+    # os.environ['CUDA_VISIBLE_DEVICES'] = '0, 1, 2, 3'
     tf.app.run()

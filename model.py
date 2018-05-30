@@ -1,6 +1,9 @@
 import os
 import tensorflow as tf
+
+from Data_Loader import DataLoader
 from ops import conv_3d, max_pool, deconv_3d
+from utils import cross_entropy
 
 
 class Unet_3D(object):
@@ -30,14 +33,14 @@ class Unet_3D(object):
     def create_placeholders(self):
         with tf.name_scope('Input'):
             self.x = tf.placeholder(tf.float32, self.input_shape, name='input')
-            self.y = tf.placeholder(tf.float32, self.output_shape, name='annotation')
-            self.keep_prob = tf.placeholder(tf.float32)
+            self.y = tf.placeholder(tf.int64, self.output_shape, name='annotation')
+            # self.keep_prob = tf.placeholder(tf.float32)
 
     def inference(self):
         if self.__logits:
             return self
         # Building network...
-        with tf.variable_scope('AlexNet'):
+        with tf.variable_scope('3D_UNET'):
             conv1 = conv_3d(self.x, self.k_size, 16, 'CONV1')
             conv2 = conv_3d(conv1, self.k_size, 32, 'CONV2')
             pool1 = max_pool(conv2, self.pool_size, 'MaxPool1')
@@ -51,16 +54,17 @@ class Unet_3D(object):
             return self
         with tf.name_scope('Loss'):
             y_one_hot = tf.one_hot(self.y, depth=self.conf.num_cls, axis=4, name='y_one_hot')
-            with tf.name_scope('cross_entropy'):
-                losses = tf.losses.softmax_cross_entropy(y_one_hot, self.__logits, scope='losses')
-                cross_entropy = tf.reduce_mean(losses, name='loss')
-                tf.summary.scalar('cross_entropy', cross_entropy)
+            if self.conf.loss_type == 'cross-entropy':
+                with tf.name_scope('cross_entropy'):
+                    loss = cross_entropy(y_one_hot, self.__logits, self.conf.num_cls)
+            elif self.conf.loss_type == 'dice-coefficient':
+                with tf.name_scope('dice_coefficient'):
+                    loss = dice_coeff(y_one_hot, self.__logits, self.conf.num_cls)
             with tf.name_scope('L2_loss'):
                 l2_loss = tf.reduce_sum(
                     self.conf.lmbda * tf.stack([tf.nn.l2_loss(v) for v in tf.get_collection('reg_weights')]))
-                tf.summary.scalar('l2_loss', l2_loss)
             with tf.name_scope('total'):
-                self.__loss = cross_entropy + l2_loss
+                self.__loss = loss + l2_loss
         return self
 
     def accuracy_func(self):
@@ -125,6 +129,9 @@ class Unet_3D(object):
                 print('step: {0:<6}, val_loss= {1:.4f}, val_acc={2:.01%}'.format(train_step, loss, acc))
             if train_step % self.conf.SAVE_FREQ == 0:
                 self.save(train_step+self.conf.reload_step)
+
+    def test(self):
+        pass
 
     def save(self, step):
         print('----> Saving the model at step #{0}'.format(step))
