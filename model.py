@@ -5,11 +5,11 @@ from ops import conv_3d, max_pool, deconv_3d
 
 class Unet_3D(object):
     # Class properties
-    __network = None         # Graph for UNET
+    __logits = None         # Graph for UNET
     __train_op = None        # Operation used to optimize loss function
-    __loss = None            # Loss function to be optimized, which is based on predictions
-    __accuracy = None        # Classification accuracy for all conditions
-    __probs = None           # Prediction probability matrix of shape [batch_size, numClasses]
+    __loss = None            # Loss function to minimize
+    __accuracy = None        # Segmentation accuracy
+
     def __init__(self, sess, conf):
         self.sess = sess
         self.conf = conf
@@ -32,7 +32,7 @@ class Unet_3D(object):
             self.keep_prob = tf.placeholder(tf.float32)
 
     def inference(self):
-        if self.__network:
+        if self.__logits:
             return self
         # Building network...
         with tf.variable_scope('AlexNet'):
@@ -70,6 +70,18 @@ class Unet_3D(object):
             self.__accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32), name='accuracy_op')
         return self
 
+    def configure_network(self):
+        if self.__loss:
+            return self
+        with tf.name_scope('Optimizer'):
+            optimizer = tf.train.AdamOptimizer(learning_rate=self.conf.init_lr)
+            self.__train_op = optimizer.minimize(self.__loss)
+        self.sess.run(tf.global_variables_initializer())
+        trainable_vars = tf.trainable_variables()
+        self.saver = tf.train.Saver(var_list=trainable_vars, max_to_keep=0)
+        self.writer = tf.summary.FileWriter(self.conf.logdir, self.sess.graph)
+        return self
+
     def config_summary(self, name):
         summarys = []
         summarys.append(tf.summary.scalar(name+'/loss', self.__loss))
@@ -77,7 +89,34 @@ class Unet_3D(object):
         summary = tf.summary.merge(summarys)
         return summary
 
-
+    def train(self):
+        if self.conf.reload_step > 0:
+            self.reload(self.conf.reload_step)
+        data_reader = H53DDataLoader(self.conf.data_dir, self.conf.patch_size, self.conf.validation_id, self.conf.overlap_stepsize, self.conf.aug_flip, self.conf.aug_rotate)
+        for train_step in range(1, self.conf.max_step+1):
+            # if train_step % self.conf.test_interval == 0:
+            #     inputs, annotations = data_reader.valid_next_batch()
+            #     feed_dict = {self.inputs: inputs,
+            #                  self.annotations: annotations}
+            #     loss, summary = self.sess.run(
+            #         [self.loss_op, self.valid_summary], feed_dict=feed_dict)
+            #     self.save_summary(summary, train_step+self.conf.reload_step)
+            #     print('----testing loss', loss)
+            # el
+            if train_step % self.conf.SUMMARY_FREQ == 0:
+                inputs, annotations = data_reader.next_batch(self.conf.batch)
+                feed_dict = {self.x: inputs, self.y: annotations}
+                _, loss, summary = self.sess.run([self.train_op, self.loss, self.train_summary],
+                    feed_dict=feed_dict)
+                self.save_summary(summary, train_step+self.conf.reload_step)
+            else:
+                inputs, annotations = data_reader.next_batch(self.conf.batch)
+                feed_dict = {self.x: inputs, self.y: annotations}
+                loss, _ = self.sess.run(
+                    [self.loss_op, self.train_op], feed_dict=feed_dict)
+                print('----training loss', loss)
+            if train_step % self.conf.save_interval == 0:
+                self.save(train_step+self.conf.reload_step)
 
     def save(self, step):
         print('---->saving', step)
@@ -86,23 +125,32 @@ class Unet_3D(object):
         self.saver.save(self.sess, checkpoint_path, global_step=step)
 
     def reload(self, step):
-        checkpoint_path = os.path.join(
-            self.conf.modeldir, self.conf.model_name)
+        checkpoint_path = os.path.join(self.conf.modeldir, self.conf.model_name)
         model_path = checkpoint_path+'-'+str(step)
         if not os.path.exists(model_path+'.meta'):
             print('------- no such checkpoint', model_path)
             return
         self.saver.restore(self.sess, model_path)
 
-
-
     @property
     def network(self):
-        return self.__network
+        return self.__logits
 
+    @property
+    def train_op(self):
+        return self.__train_op
 
+    @property
+    def loss(self):
+        return self.__loss
 
+    @property
+    def accuracy(self):
+        return self.__accuracy
 
+    @property
+    def train_summary(self):
+        return self.__loss
 
 
 

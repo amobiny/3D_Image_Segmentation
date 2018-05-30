@@ -7,8 +7,8 @@ flags.DEFINE_string('mode', 'train', 'train or test')
 flags.DEFINE_integer('max_step', 250000, '# of step for training')
 flags.DEFINE_integer('test_interval', 100000000, '# of interval to test a model')
 # flags.DEFINE_integer('save_interval', 1000, '# of interval to save model')
-flags.DEFINE_integer('summary_interval', 100, '# of step to save summary')
-flags.DEFINE_float('learning_rate', 1e-3, 'learning rate')
+flags.DEFINE_integer('SUMMARY_FREQ', 100, '# of step to save summary')
+flags.DEFINE_float('init_lr', 1e-3, 'learning rate')
 flags.DEFINE_float('lmbda', 1e-3, 'L2 regularization coefficient')
 
 # data
