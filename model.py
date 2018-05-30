@@ -2,6 +2,7 @@ import tensorflow as tf
 from Data_Loader import DataLoader
 from ops import conv_3d, max_pool, deconv_3d
 from utils import cross_entropy, dice_coeff
+import os
 
 
 class Unet_3D(object):
@@ -11,8 +12,8 @@ class Unet_3D(object):
         self.conf = conf
         self.k_size = self.conf.filter_size
         self.pool_size = self.conf.pool_filter_size
-        self.input_shape = [self.conf.batch_size, self.conf.depth, self.conf.height, self.conf.width, self.conf.channel]
-        self.output_shape = [self.conf.batch_size, self.conf.depth, self.conf.height, self.conf.width]
+        self.input_shape = [self.conf.batch_size, self.conf.height, self.conf.width, self.conf.depth, self.conf.channel]
+        self.output_shape = [self.conf.batch_size, self.conf.height, self.conf.width, self.conf.depth]
         self.create_placeholders()
         self.configure_network()
         self.configure_summary()

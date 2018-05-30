@@ -14,13 +14,14 @@ flags.DEFINE_float('init_lr', 1e-3, 'learning rate')
 # Hyper-parameters
 flags.DEFINE_string('loss_type', 'dice', 'cross-entropy or dice')
 flags.DEFINE_float('lmbda', 1e-3, 'L2 regularization coefficient')
-flags.DEFINE_integer('batch_size', 5, 'training batch size')
+flags.DEFINE_integer('batch_size', 2, 'training batch size')
 
 # data
-flags.DEFINE_string('data_dir', '../h5_data_SA/', 'Data directory')
-flags.DEFINE_integer('height', 32, 'height size')   # should be equal to patch_size
-flags.DEFINE_integer('width', 32, 'width size')     # should be equal to patch_size
-flags.DEFINE_integer('depth', 32, 'depth size')     # should be equal to patch_size
+flags.DEFINE_string('data_dir', './data/', 'Data directory')
+flags.DEFINE_integer('num_tr', 2, 'Total number of training images')
+flags.DEFINE_integer('height', 64, 'height size')
+flags.DEFINE_integer('width', 64, 'width size')
+flags.DEFINE_integer('depth', 32, 'depth size')
 flags.DEFINE_integer('channel', 1, 'channel size')
 
 # Directories
