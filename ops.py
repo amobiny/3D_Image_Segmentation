@@ -8,7 +8,7 @@ def weight_variable(name, shape):
     :param shape: weight shape
     :return: initialized weight variable
     """
-    initer = tf.truncated_normal_initializer(stddev=0.01)
+    initer = tf.contrib.layers.xavier_initializer(uniform=False)
     return tf.get_variable('W_' + name, dtype=tf.float32,
                            shape=shape, initializer=initer)
 
