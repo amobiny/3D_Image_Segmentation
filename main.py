@@ -12,7 +12,7 @@ def main(_):
         print("Please input a mode: train, test, or predict")
     else:
         model = Unet_3D(tf.Session(), args)
-        model.inference()
+        model.inference().loss_func().accuracy_func()
         if args.mode == 'train':
             model.train
         elif args.mode == 'test':

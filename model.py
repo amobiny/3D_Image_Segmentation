@@ -61,14 +61,19 @@ class Unet_3D(object):
                 self.__loss = cross_entropy + l2_loss
         return self
 
-
-
-
+    def accuracy_func(self):
+        if self.__accuracy:
+            return self
+        with tf.name_scope('Accuracy'):
+            y_pred = tf.argmax(self.__logits, axis=4, name='decode_pred')
+            correct_prediction = tf.equal(self.y, y_pred, name='correct_pred')
+            self.__accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32), name='accuracy_op')
+        return self
 
     def config_summary(self, name):
         summarys = []
         summarys.append(tf.summary.scalar(name+'/loss', self.__loss))
-        summarys.append(tf.summary.scalar(name+'/accuracy', self.accuracy_op))
+        summarys.append(tf.summary.scalar(name+'/accuracy', self.__accuracy))
         summary = tf.summary.merge(summarys)
         return summary
 

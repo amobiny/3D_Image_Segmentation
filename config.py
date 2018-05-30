@@ -23,8 +23,8 @@ flags.DEFINE_integer('depth', 32, 'depth size')     # should be equal to patch_s
 flags.DEFINE_integer('height', 32, 'height size')   # should be equal to patch_size
 flags.DEFINE_integer('width', 32, 'width size')     # should be equal to patch_size
 # Debug
-flags.DEFINE_string('logdir', './logdir', 'Log dir')
-flags.DEFINE_string('modeldir', './modeldir', 'Model dir')
+flags.DEFINE_string('logdir', './log_dir', 'Logs directory')
+flags.DEFINE_string('modeldir', './model_dir', 'Model directory')
 flags.DEFINE_string('savedir', './result', 'Result saving directory')
 flags.DEFINE_string('model_name', 'model', 'Model file name')
 flags.DEFINE_integer('reload_step', 0, 'Reload step to continue training')
