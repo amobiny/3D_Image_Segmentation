@@ -23,7 +23,7 @@ class Unet_3D(object):
             os.makedirs(conf.savedir)
         self.create_placeholders()
         self.configure_network()
-        self.config_summary()
+        self.configure_summary()
 
     def create_placeholders(self):
         with tf.name_scope('Input'):
@@ -74,7 +74,7 @@ class Unet_3D(object):
         self.saver = tf.train.Saver(var_list=trainable_vars, max_to_keep=0)
         self.writer = tf.summary.FileWriter(self.conf.logdir, self.sess.graph)
 
-    def config_summary(self):
+    def configure_summary(self):
         summary_list = [tf.summary.scalar('train/loss', self.loss),
                         tf.summary.scalar('train/accuracy', self.accuracy),
                         tf.summary.scalar('valid/loss', self.loss),
@@ -89,7 +89,7 @@ class Unet_3D(object):
     def train(self):
         if self.conf.reload_step > 0:
             self.reload(self.conf.reload_step)
-        data_reader = DataLoader(self.conf.data_dir)
+        data_reader = DataLoader(self.conf)
         for train_step in range(1, self.conf.max_step+1):
 
             if train_step % self.conf.SUMMARY_FREQ == 0:
@@ -131,11 +131,4 @@ class Unet_3D(object):
         print('----> Restoring the model...')
         self.saver.restore(self.sess, model_path)
         print('Model successfully restored')
-
-
-
-
-
-
-
 

@@ -1,8 +1,9 @@
 
 
 class DataLoader(object):
-    def __init__(self, data_dir):
-        self.data_dir = data_dir
+    def __init__(self, cfg):
+        self.data_dir = cfg.data_dir
+        self.batch_size = cfg.batch_size
 
     def next_batch(self):
         pass
