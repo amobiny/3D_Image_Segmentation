@@ -19,7 +19,7 @@ class DataLoader(object):
         front = np.random.randint(self.max_bottom_left_front_corner[2])
         h5f = h5py.File(self.data_dir + 'train_data/train.h5', 'r')
         x = h5f['x_train'][img_idx, bottom:bottom+self.height, left:left+self.width, front:front+self.depth, :]
-        y = h5f['y_train'][img_idx, bottom:bottom+self.height, left:left+self.width, front:front+self.depth, :]
+        y = h5f['y_train'][img_idx, bottom:bottom+self.height, left:left+self.width, front:front+self.depth]
         h5f.close()
         return x, y
 

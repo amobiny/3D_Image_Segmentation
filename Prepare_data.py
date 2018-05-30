@@ -29,7 +29,7 @@ def get_data(path, img_size=(128, 128, 64)):
     loads all images and corresponding masks and converts them to numpy arrays
     :param path: path to the destination folder (which includes raw and mask folders)
     :param img_size: size of the images
-    :return: 4D arrays (#images, height, width, depth) of images and corresponding masks
+    :return: 4D arrays (#images, height, width, depth, 1) of images and corresponding masks
     """
     folders = os.listdir(path)
     folders.sort()
@@ -45,7 +45,7 @@ def get_data(path, img_size=(128, 128, 64)):
         f_path = path + folder
         image_3d = read_images(f_path)
         masks = np.concatenate((masks, image_3d), axis=0)
-    return images, masks
+    return images, np.squeeze(masks)
 
 
 train_path = './data/train_data/'
