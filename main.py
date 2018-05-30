@@ -1,7 +1,7 @@
 import tensorflow as tf
 import argparse
 from config import args
-from model import Unet_3D
+from model_2 import Unet_3D
 
 
 def main(_):
@@ -11,7 +11,6 @@ def main(_):
         print("Please input a mode: train, test, or predict")
     else:
         model = Unet_3D(tf.Session(), args)
-        model.inference().loss_func().accuracy_func()
         if args.mode == 'train':
             model.train()
         elif args.mode == 'test':

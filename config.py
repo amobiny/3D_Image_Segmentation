@@ -10,6 +10,7 @@ flags.DEFINE_integer('SAVE_FREQ', 1000, 'Number of steps to save model')
 flags.DEFINE_integer('SUMMARY_FREQ', 100, 'Number of step to save summary')
 flags.DEFINE_integer('VAL_FREQ', 1000, 'Number of step to evaluate the network on Validation data')
 flags.DEFINE_float('init_lr', 1e-3, 'learning rate')
+flags.DEFINE_string('loss_type', 'dice', 'cross-entropy or dice')
 flags.DEFINE_float('lmbda', 1e-3, 'L2 regularization coefficient')
 
 # data
