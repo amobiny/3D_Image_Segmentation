@@ -42,7 +42,7 @@ def conv_3d(inputs, filter_size, num_filters, layer_name, is_train=True,
     with tf.variable_scope(layer_name):
         shape = [filter_size, filter_size, filter_size, num_in_channel, num_filters]
         weights = weight_variable(layer_name, shape=shape)
-        tf.summary.histogram('W', weights)
+        # tf.summary.histogram('W', weights)
         # biases = bias_variable(layer_name, [num_filters])
         layer = tf.nn.conv3d(input=inputs,
                              filter=weights,

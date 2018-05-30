@@ -6,9 +6,11 @@ from ops import conv_3d, max_pool, deconv_3d
 class Unet_3D(object):
     # Class properties
     __logits = None         # Graph for UNET
-    __train_op = None        # Operation used to optimize loss function
-    __loss = None            # Loss function to minimize
-    __accuracy = None        # Segmentation accuracy
+    __train_op = None       # Operation used to optimize loss function
+    __loss = None           # Loss function to minimize
+    __accuracy = None       # Segmentation accuracy
+    __train_summary = None  # Train summaries
+    __valid_summary = None  # Validation summaries
 
     def __init__(self, sess, conf):
         self.sess = sess
@@ -71,7 +73,7 @@ class Unet_3D(object):
         return self
 
     def configure_network(self):
-        if self.__loss:
+        if self.__train_op:
             return self
         with tf.name_scope('Optimizer'):
             optimizer = tf.train.AdamOptimizer(learning_rate=self.conf.init_lr)
@@ -82,44 +84,50 @@ class Unet_3D(object):
         self.writer = tf.summary.FileWriter(self.conf.logdir, self.sess.graph)
         return self
 
-    def config_summary(self, name):
-        summarys = []
-        summarys.append(tf.summary.scalar(name+'/loss', self.__loss))
-        summarys.append(tf.summary.scalar(name+'/accuracy', self.__accuracy))
-        summary = tf.summary.merge(summarys)
-        return summary
+    def config_summary(self):
+        if self.__train_summary and self.__valid_summary:
+            return self
+        summary_list = [tf.summary.scalar('train/loss', self.__loss),
+                        tf.summary.scalar('train/accuracy', self.__accuracy),
+                        tf.summary.scalar('valid/loss', self.__loss),
+                        tf.summary.scalar('valid/accuracy', self.__accuracy)]
+        self.__train_summary = tf.summary.merge(summary_list[:2])
+        self.__valid_summary = tf.summary.merge(summary_list[2:])
+        return self
+
+    def save_summary(self, summary, step):
+        print('---->Summarizing', step)
+        self.writer.add_summary(summary, step)
 
     def train(self):
         if self.conf.reload_step > 0:
             self.reload(self.conf.reload_step)
-        data_reader = H53DDataLoader(self.conf.data_dir, self.conf.patch_size, self.conf.validation_id, self.conf.overlap_stepsize, self.conf.aug_flip, self.conf.aug_rotate)
+        data_reader = DataLoader(self.conf.data_dir)
         for train_step in range(1, self.conf.max_step+1):
-            # if train_step % self.conf.test_interval == 0:
-            #     inputs, annotations = data_reader.valid_next_batch()
-            #     feed_dict = {self.inputs: inputs,
-            #                  self.annotations: annotations}
-            #     loss, summary = self.sess.run(
-            #         [self.loss_op, self.valid_summary], feed_dict=feed_dict)
-            #     self.save_summary(summary, train_step+self.conf.reload_step)
-            #     print('----testing loss', loss)
-            # el
+
             if train_step % self.conf.SUMMARY_FREQ == 0:
-                inputs, annotations = data_reader.next_batch(self.conf.batch)
-                feed_dict = {self.x: inputs, self.y: annotations}
-                _, loss, summary = self.sess.run([self.train_op, self.loss, self.train_summary],
-                    feed_dict=feed_dict)
+                x_batch, y_batch = data_reader.next_batch()
+                feed_dict = {self.x: x_batch, self.y: y_batch}
+                _, loss, acc, summary = self.sess.run([self.train_op, self.loss, self.accuracy, self.train_summary],
+                                                      feed_dict=feed_dict)
                 self.save_summary(summary, train_step+self.conf.reload_step)
+                print('step: {0:<6}, train_loss= {1:.4f}, train_acc={2:.01%}'.format(train_step, loss, acc))
             else:
-                inputs, annotations = data_reader.next_batch(self.conf.batch)
-                feed_dict = {self.x: inputs, self.y: annotations}
-                loss, _ = self.sess.run(
-                    [self.loss_op, self.train_op], feed_dict=feed_dict)
-                print('----training loss', loss)
-            if train_step % self.conf.save_interval == 0:
+                x_batch, y_batch = data_reader.next_batch()
+                feed_dict = {self.x: x_batch, self.y: y_batch}
+                self.sess.run(self.train_op, feed_dict=feed_dict)
+            if train_step % self.conf.VAL_FREQ == 0:
+                x_val, y_val = data_reader.get_validation()
+                feed_dict = {self.x: x_val, self.y: y_val}
+                loss, acc, summary = self.sess.run([self.loss, self.accuracy, self.valid_summary], feed_dict=feed_dict)
+                self.save_summary(summary, train_step+self.conf.reload_step)
+                print('-'*30+'Validation'+'-'*30)
+                print('step: {0:<6}, val_loss= {1:.4f}, val_acc={2:.01%}'.format(train_step, loss, acc))
+            if train_step % self.conf.SAVE_FREQ == 0:
                 self.save(train_step+self.conf.reload_step)
 
     def save(self, step):
-        print('---->saving', step)
+        print('----> Saving the model at step #{0}'.format(step))
         checkpoint_path = os.path.join(
             self.conf.modeldir, self.conf.model_name)
         self.saver.save(self.sess, checkpoint_path, global_step=step)
@@ -128,9 +136,11 @@ class Unet_3D(object):
         checkpoint_path = os.path.join(self.conf.modeldir, self.conf.model_name)
         model_path = checkpoint_path+'-'+str(step)
         if not os.path.exists(model_path+'.meta'):
-            print('------- no such checkpoint', model_path)
+            print('------- No such checkpoint found', model_path)
             return
+        print('----> Restoring the model...')
         self.saver.restore(self.sess, model_path)
+        print('Model successfully restored')
 
     @property
     def network(self):
@@ -150,8 +160,11 @@ class Unet_3D(object):
 
     @property
     def train_summary(self):
-        return self.__loss
+        return self.__train_summary
 
+    @property
+    def valid_summary(self):
+        return self.__valid_summary
 
 
 
