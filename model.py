@@ -1,6 +1,4 @@
-import os
 import tensorflow as tf
-
 from Data_Loader import DataLoader
 from ops import conv_3d, max_pool, deconv_3d
 from utils import cross_entropy, dice_coeff
@@ -15,12 +13,6 @@ class Unet_3D(object):
         self.pool_size = self.conf.pool_filter_size
         self.input_shape = [self.conf.batch_size, self.conf.depth, self.conf.height, self.conf.width, self.conf.channel]
         self.output_shape = [self.conf.batch_size, self.conf.depth, self.conf.height, self.conf.width]
-        if not os.path.exists(conf.modeldir):
-            os.makedirs(conf.modeldir)
-        if not os.path.exists(conf.logdir):
-            os.makedirs(conf.logdir)
-        if not os.path.exists(conf.savedir):
-            os.makedirs(conf.savedir)
         self.create_placeholders()
         self.configure_network()
         self.configure_summary()
