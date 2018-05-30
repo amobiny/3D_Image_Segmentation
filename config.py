@@ -9,6 +9,8 @@ flags.DEFINE_integer('test_interval', 100000000, '# of interval to test a model'
 # flags.DEFINE_integer('save_interval', 1000, '# of interval to save model')
 flags.DEFINE_integer('summary_interval', 100, '# of step to save summary')
 flags.DEFINE_float('learning_rate', 1e-3, 'learning rate')
+flags.DEFINE_float('lmbda', 1e-3, 'L2 regularization coefficient')
+
 # data
 flags.DEFINE_string('data_dir', '../h5_data_SA/', 'Name of data file(s)')
 flags.DEFINE_boolean('aug_flip', False, 'Training data augmentation: flip. Extra 3 datasets.')
@@ -30,7 +32,7 @@ flags.DEFINE_integer('test_step', 150000, 'Test or predict model at this step')
 flags.DEFINE_integer('random_seed', int(time.time()), 'random seed')
 # network architecture
 flags.DEFINE_integer('network_depth', 4, 'network depth for U-Net')
-flags.DEFINE_integer('num_classes', 2, 'Number of output classes')
+flags.DEFINE_integer('num_cls', 2, 'Number of output classes')
 flags.DEFINE_integer('start_channel_num', 16, 'start number of outputs for the first conv layer')
 flags.DEFINE_integer('filter_size', 3, 'Filter size for the conv and deconv layers')
 flags.DEFINE_integer('pool_filter_size', 2, 'Filter size for pooling layers')

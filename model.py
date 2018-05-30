@@ -41,8 +41,38 @@ class Unet_3D(object):
             pool1 = max_pool(conv2, self.pool_size, 'MaxPool1')
             deconv1 = deconv_3d(pool1, self.k_size, 16, 'DECONV1')
             merge1 = tf.concat([conv2, deconv1], -1, name='concat')
-            self.__network = conv_3d(merge1, self.k_size, self.conf.num_classes, 'CONV3')
+            self.__logits = conv_3d(merge1, self.k_size, self.conf.num_cls, 'CONV3')
         return self
+
+    def loss_func(self):
+        if self.__loss:
+            return self
+        with tf.name_scope('Loss'):
+            y_one_hot = tf.one_hot(self.y, depth=self.conf.num_cls, axis=4, name='y_one_hot')
+            with tf.name_scope('cross_entropy'):
+                losses = tf.losses.softmax_cross_entropy(y_one_hot, self.__logits, scope='losses')
+                cross_entropy = tf.reduce_mean(losses, name='loss')
+                tf.summary.scalar('cross_entropy', cross_entropy)
+            with tf.name_scope('L2_loss'):
+                l2_loss = tf.reduce_sum(
+                    self.conf.lmbda * tf.stack([tf.nn.l2_loss(v) for v in tf.get_collection('reg_weights')]))
+                tf.summary.scalar('l2_loss', l2_loss)
+            with tf.name_scope('total'):
+                self.__loss = cross_entropy + l2_loss
+        return self
+
+
+
+
+
+    def config_summary(self, name):
+        summarys = []
+        summarys.append(tf.summary.scalar(name+'/loss', self.__loss))
+        summarys.append(tf.summary.scalar(name+'/accuracy', self.accuracy_op))
+        summary = tf.summary.merge(summarys)
+        return summary
+
+
 
     def save(self, step):
         print('---->saving', step)
