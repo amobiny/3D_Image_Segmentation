@@ -29,17 +29,19 @@ class Unet_3D(object):
         with tf.name_scope('Input'):
             self.x = tf.placeholder(tf.float32, self.input_shape, name='input')
             self.y = tf.placeholder(tf.int64, self.output_shape, name='annotation')
+            self.is_training = True
+            # self.is_training = tf.placeholder_with_default(True, shape=(), name='is_training')
             # self.keep_prob = tf.placeholder(tf.float32)
 
     def inference(self):
         # Building network...
         with tf.variable_scope('3D_UNET'):
-            conv1 = conv_3d(self.x, self.k_size, 16, 'CONV1')
-            conv2 = conv_3d(conv1, self.k_size, 32, 'CONV2')
+            conv1 = conv_3d(self.x, self.k_size, 16, 'CONV1', is_train=self.is_training)
+            conv2 = conv_3d(conv1, self.k_size, 32, 'CONV2', is_train=self.is_training)
             pool1 = max_pool(conv2, self.pool_size, 'MaxPool1')
-            deconv1 = deconv_3d(pool1, self.k_size, 16, 'DECONV1')
+            deconv1 = deconv_3d(pool1, self.k_size, 16, 'DECONV1', is_train=self.is_training)
             merge1 = tf.concat([conv2, deconv1], -1, name='concat')
-            self.logits = conv_3d(merge1, self.k_size, self.conf.num_cls, 'CONV3')
+            self.logits = conv_3d(merge1, self.k_size, self.conf.num_cls, 'CONV3', is_train=self.is_training)
             self.loss_func()
             self.accuracy_func()
 
@@ -91,7 +93,7 @@ class Unet_3D(object):
             self.reload(self.conf.reload_step)
         data_reader = DataLoader(self.conf)
         for train_step in range(1, self.conf.max_step+1):
-
+            self.is_training = True
             if train_step % self.conf.SUMMARY_FREQ == 0:
                 x_batch, y_batch = data_reader.next_batch()
                 feed_dict = {self.x: x_batch, self.y: y_batch}
@@ -104,6 +106,7 @@ class Unet_3D(object):
                 feed_dict = {self.x: x_batch, self.y: y_batch}
                 self.sess.run(self.train_op, feed_dict=feed_dict)
             if train_step % self.conf.VAL_FREQ == 0:
+                self.is_training = False
                 x_val, y_val = data_reader.get_validation()
                 feed_dict = {self.x: x_val, self.y: y_val}
                 loss, acc, summary = self.sess.run([self.loss, self.accuracy, self.valid_summary], feed_dict=feed_dict)
