@@ -1,13 +1,15 @@
 import os
 from PIL import Image
 import numpy as np
-import cv2
-import glob
+import h5py
 
 
 def read_images(path, img_size=(128, 128, 64)):
     img_3d = np.zeros((img_size[0], img_size[1], 0))
-    for filename in glob.glob(path + '/*.bmp'):
+    image_name_list = os.listdir(path)
+    image_name_list.sort()
+    for img_name in image_name_list:
+        filename = path + '/' + img_name
         img = np.array(Image.open(filename))
         if len(img.shape) == 3:     # if image is saved as RGB (i.e. with three similar channels)
             img = img[:, :, 0]
@@ -34,6 +36,12 @@ def get_data(path, img_size=(128, 128, 64)):
     return images, masks
 
 
-train_input, train_mask = get_data('./data/train_data/')
+train_path = './data/train_data/'
+x_train, y_train = get_data(train_path)
+h5f = h5py.File(train_path + 'train.h5', 'w')
+h5f.create_dataset('X_train', data=x_train)
+h5f.create_dataset('Y_train', data=y_train)
+h5f.close()
+
 
 print()
