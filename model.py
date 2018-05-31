@@ -46,7 +46,7 @@ class Unet_3D(object):
                     loss = cross_entropy(y_one_hot, self.logits, self.conf.num_cls)
             elif self.conf.loss_type == 'dice':
                 with tf.name_scope('dice_coefficient'):
-                    loss = dice_coeff(y_one_hot, self.logits, self.conf.num_cls)
+                    loss = dice_coeff(y_one_hot, self.logits)
             with tf.name_scope('L2_loss'):
                 l2_loss = tf.reduce_sum(
                     self.conf.lmbda * tf.stack([tf.nn.l2_loss(v) for v in tf.get_collection('reg_weights')]))
@@ -84,8 +84,10 @@ class Unet_3D(object):
     def train(self):
         if self.conf.reload_step > 0:
             self.reload(self.conf.reload_step)
+        print('Start Training')
         data_reader = DataLoader(self.conf)
         for train_step in range(1, self.conf.max_step+1):
+            print('Step: {}'.format(train_step))
             self.is_training = True
             if train_step % self.conf.SUMMARY_FREQ == 0:
                 x_batch, y_batch = data_reader.next_batch()
