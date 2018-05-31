@@ -45,20 +45,29 @@ def get_data(path, img_size=(128, 128, 64)):
         f_path = path + folder
         image_3d = read_images(f_path)
         masks = np.concatenate((masks, image_3d), axis=0)
+    masks = (masks/255).astype(int)
     return images, masks
 
+
 def normalize(x):
+    """
+    Normalizes the input to have zero mean and unit standard deviation
+    :param x: input of size (#images, height, width, depth)
+    :return: normalized input of size (#images, height, width, depth, 1), mean and std arrays of all images
+    """
     m = np.mean(x, axis=0)
     s = np.std(x, axis=0)
-    x_norm = x-m
+    x_norm = (x-m)/s
     return np.expand_dims(x_norm, axis=-1), m, s
 
 
 train_path = './data/train_data/'
 x_train, y_train = get_data(train_path)
-x_train, mean, std = normalize(x_train)
+x_train, m_train, s_train = normalize(x_train)
 h5f = h5py.File(train_path + 'train.h5', 'w')
 h5f.create_dataset('x_train', data=x_train)
 h5f.create_dataset('y_train', data=y_train)
+h5f.create_dataset('m_train', data=m_train)
+h5f.create_dataset('s_train', data=s_train)
 h5f.close()
 

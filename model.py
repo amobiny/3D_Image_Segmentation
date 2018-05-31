@@ -31,10 +31,17 @@ class Unet_3D(object):
         with tf.variable_scope('3D_UNET'):
             conv1 = conv_3d(self.x, self.k_size, 16, 'CONV1', is_train=self.is_training)
             conv2 = conv_3d(conv1, self.k_size, 32, 'CONV2', is_train=self.is_training)
-            pool1 = max_pool(conv2, self.pool_size, 'MaxPool1')
-            deconv1 = deconv_3d(pool1, self.k_size, 16, 'DECONV1', is_train=self.is_training)
-            merge1 = tf.concat([conv2, deconv1], -1, name='concat')
-            self.logits = conv_3d(merge1, self.k_size, self.conf.num_cls, 'CONV3', is_train=self.is_training)
+            conv3 = conv_3d(conv2, self.k_size, 64, 'CONV3', is_train=self.is_training)
+            conv4 = conv_3d(conv3, self.k_size, 128, 'CONV4', is_train=self.is_training)
+            conv5 = conv_3d(conv4, self.k_size, 64, 'CONV5', is_train=self.is_training)
+            conv6 = conv_3d(conv5, self.k_size, 32, 'CONV6', is_train=self.is_training)
+            conv7 = conv_3d(conv6, self.k_size, 16, 'CONV7', is_train=self.is_training)
+            self.logits = conv_3d(conv7, 1, 1, 'CONV8', is_train=self.is_training, use_relu=False)
+
+            # pool1 = max_pool(conv2, self.pool_size, 'MaxPool1')
+            # deconv1 = deconv_3d(pool1, self.k_size, 16, 'DECONV1', is_train=self.is_training)
+            # merge1 = tf.concat([conv2, deconv1], -1, name='concat')
+            # self.logits = conv_3d(merge1, self.k_size, self.conf.num_cls, 'CONV3', is_train=self.is_training)
             self.loss_func()
             self.accuracy_func()
 

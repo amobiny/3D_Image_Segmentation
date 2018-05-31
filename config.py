@@ -18,7 +18,7 @@ flags.DEFINE_integer('batch_size', 2, 'training batch size')
 
 # data
 flags.DEFINE_string('data_dir', './data/', 'Data directory')
-flags.DEFINE_integer('num_tr', 2, 'Total number of training images')
+flags.DEFINE_integer('num_tr', 20, 'Total number of training images')
 flags.DEFINE_integer('height', 64, 'height size')
 flags.DEFINE_integer('width', 64, 'width size')
 flags.DEFINE_integer('depth', 32, 'depth size')
