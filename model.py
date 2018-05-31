@@ -55,8 +55,8 @@ class Unet_3D(object):
 
     def accuracy_func(self):
         with tf.name_scope('Accuracy'):
-            y_pred = tf.argmax(self.logits, axis=4, name='decode_pred')
-            correct_prediction = tf.equal(self.y, y_pred, name='correct_pred')
+            self.y_pred = tf.argmax(self.logits, axis=4, name='decode_pred')
+            correct_prediction = tf.equal(self.y, self.y_pred, name='correct_pred')
             self.accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32), name='accuracy_op')
 
     def configure_network(self):
@@ -72,13 +72,22 @@ class Unet_3D(object):
     def configure_summary(self):
         summary_list = [tf.summary.scalar('train/loss', self.loss),
                         tf.summary.scalar('train/accuracy', self.accuracy),
+                        tf.summary.image('original_image',
+                                         self.x[:, :, :, self.conf.depth / 2],
+                                         max_outputs=self.conf.batch_size),
+                        tf.summary.image('prediction_mask',
+                                         tf.cast(tf.expand_dims(self.y_pred[:, :, :, self.conf.depth/2], -1), tf.float32),
+                                         max_outputs=self.conf.batch_size),
+                        tf.summary.image('original_mask',
+                                         tf.cast(tf.expand_dims(self.y[:, :, :, self.conf.depth / 2], -1), tf.float32),
+                                         max_outputs=self.conf.batch_size),
                         tf.summary.scalar('valid/loss', self.loss),
                         tf.summary.scalar('valid/accuracy', self.accuracy)]
-        self.train_summary = tf.summary.merge(summary_list[:2])
+        self.train_summary = tf.summary.merge(summary_list[:5])
         self.valid_summary = tf.summary.merge(summary_list[2:])
 
     def save_summary(self, summary, step):
-        print('----> Summarizing', step)
+        print('----> Summarizing at step {}'.format(step))
         self.writer.add_summary(summary, step)
 
     def train(self):
