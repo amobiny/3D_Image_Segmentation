@@ -12,7 +12,7 @@ flags.DEFINE_integer('VAL_FREQ', 1000, 'Number of step to evaluate the network o
 flags.DEFINE_float('init_lr', 1e-3, 'learning rate')
 
 # Hyper-parameters
-flags.DEFINE_string('loss_type', 'dice', 'cross-entropy or dice')
+flags.DEFINE_string('loss_type', 'cross-entropy', 'cross-entropy or dice')
 flags.DEFINE_float('lmbda', 1e-3, 'L2 regularization coefficient')
 flags.DEFINE_integer('batch_size', 2, 'training batch size')
 
