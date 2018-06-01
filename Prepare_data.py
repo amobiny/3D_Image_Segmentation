@@ -39,11 +39,11 @@ def get_data(path, img_size=(128, 128, 64)):
     masks = np.zeros([0] + list(img_size))
     for folder in input_folders:
         f_path = path + folder
-        image_3d = read_images(f_path)
+        image_3d = read_images(f_path, img_size)
         images = np.concatenate((images, image_3d), axis=0)
     for folder in annotation_folders:
         f_path = path + folder
-        image_3d = read_images(f_path)
+        image_3d = read_images(f_path, img_size)
         masks = np.concatenate((masks, image_3d), axis=0)
     masks = (masks/255).astype(int)
     return images, masks
@@ -60,7 +60,7 @@ def normalize(x):
     x_norm = (x-m)/s
     return np.expand_dims(x_norm, axis=-1), m, s
 
-
+# Create normalize, and save training data
 train_path = './data/train_data/'
 x_train, y_train = get_data(train_path)
 x_train, m_train, s_train = normalize(x_train)
@@ -71,3 +71,14 @@ h5f.create_dataset('m_train', data=m_train)
 h5f.create_dataset('s_train', data=s_train)
 h5f.close()
 
+# Create normalize, and save validation data
+valid_path = './data/valid_data/'
+x_valid, y_valid = get_data(valid_path, img_size=(64, 64, 32))
+
+# neither the best validation set, nor the best way to normalize
+x_valid = (x_valid-m_train[:64, :64, :32])/s_train[:64, :64, :32]
+
+h5f = h5py.File(valid_path + 'valid.h5', 'w')
+h5f.create_dataset('x_valid', data=x_valid)
+h5f.create_dataset('y_valid', data=y_valid)
+h5f.close()

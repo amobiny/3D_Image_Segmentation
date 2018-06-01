@@ -17,12 +17,13 @@ flags.DEFINE_float('lmbda', 1e-3, 'L2 regularization coefficient')
 flags.DEFINE_integer('batch_size', 2, 'training batch size')
 
 # data
-flags.DEFINE_string('data_dir', './data/', 'Data directory')
+flags.DEFINE_string('train_data_dir', './data/train_data/', 'Training data directory')
+flags.DEFINE_string('valid_data_dir', './data/valid_data/', 'Validation data directory')
 flags.DEFINE_integer('num_tr', 20, 'Total number of training images')
-flags.DEFINE_integer('height', 64, 'height size')
-flags.DEFINE_integer('width', 64, 'width size')
-flags.DEFINE_integer('depth', 32, 'depth size')
-flags.DEFINE_integer('channel', 1, 'channel size')
+flags.DEFINE_integer('height', 64, 'Network input height size')
+flags.DEFINE_integer('width', 64, 'Network input width size')
+flags.DEFINE_integer('depth', 32, 'Network input depth size')
+flags.DEFINE_integer('channel', 1, 'Network input channel size')
 
 # Directories
 flags.DEFINE_string('logdir', './log_dir', 'Logs directory')
