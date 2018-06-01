@@ -74,11 +74,12 @@ class Unet_3D(object):
         self.sess.run(tf.global_variables_initializer())
         trainable_vars = tf.trainable_variables()
         self.saver = tf.train.Saver(var_list=trainable_vars, max_to_keep=1000)
-        self.writer = tf.summary.FileWriter(self.conf.logdir, self.sess.graph)
+        self.train_writer = tf.summary.FileWriter(self.conf.logdir + '/train/', self.sess.graph)
+        self.valid_writer = tf.summary.FileWriter(self.conf.logdir + '/valid/')
 
     def configure_summary(self):
-        summary_list = [tf.summary.scalar('train/loss', self.loss),
-                        tf.summary.scalar('train/accuracy', self.accuracy),
+        summary_list = [tf.summary.scalar('loss', self.loss),
+                        tf.summary.scalar('accuracy', self.accuracy),
                         tf.summary.image('train/original_image',
                                          self.x[:, :, :, self.conf.depth / 2],
                                          max_outputs=self.conf.batch_size),
@@ -87,26 +88,15 @@ class Unet_3D(object):
                                          max_outputs=self.conf.batch_size),
                         tf.summary.image('train/original_mask',
                                          tf.cast(tf.expand_dims(self.y[:, :, :, self.conf.depth / 2], -1), tf.float32),
-                                         max_outputs=self.conf.batch_size),
-                        tf.summary.scalar('valid/loss', self.loss),
-                        tf.summary.scalar('valid/accuracy', self.accuracy),
-                        tf.summary.image('valid/original_image',
-                                         self.x[:, :, :, self.conf.depth / 2],
-                                         max_outputs=self.conf.batch_size),
-                        tf.summary.image('valid/prediction_mask',
-                                         tf.cast(tf.expand_dims(self.y_pred[:, :, :, self.conf.depth / 2], -1),
-                                                 tf.float32),
-                                         max_outputs=self.conf.batch_size),
-                        tf.summary.image('valid/original_mask',
-                                         tf.cast(tf.expand_dims(self.y[:, :, :, self.conf.depth / 2], -1), tf.float32),
-                                         max_outputs=self.conf.batch_size),
-                        ]
-        self.train_summary = tf.summary.merge(summary_list[:5])
-        self.valid_summary = tf.summary.merge(summary_list[5:])
+                                         max_outputs=self.conf.batch_size)]
+        self.merged_summary = tf.summary.merge(summary_list)
 
     def save_summary(self, summary, step):
         print('----> Summarizing at step {}'.format(step))
-        self.writer.add_summary(summary, step)
+        if self.is_training:
+            self.train_writer.add_summary(summary, step)
+        else:
+            self.valid_writer.add_summary(summary, step)
 
     def train(self):
         if self.conf.reload_step > 0:
@@ -121,7 +111,7 @@ class Unet_3D(object):
             if train_step % self.conf.SUMMARY_FREQ == 0:
                 x_batch, y_batch = data_reader.next_batch()
                 feed_dict = {self.x: x_batch, self.y: y_batch}
-                _, loss, acc, summary = self.sess.run([self.train_op, self.loss, self.accuracy, self.train_summary],
+                _, loss, acc, summary = self.sess.run([self.train_op, self.loss, self.accuracy, self.merged_summary],
                                                       feed_dict=feed_dict)
                 self.save_summary(summary, train_step+self.conf.reload_step)
                 print('step: {0:<6}, train_loss= {1:.4f}, train_acc={2:.01%}'.format(train_step, loss, acc))
@@ -133,7 +123,7 @@ class Unet_3D(object):
                 self.is_training = False
                 x_val, y_val = data_reader.get_validation()
                 feed_dict = {self.x: x_val, self.y: y_val}
-                loss, acc, summary = self.sess.run([self.loss, self.accuracy, self.valid_summary], feed_dict=feed_dict)
+                loss, acc, summary = self.sess.run([self.loss, self.accuracy, self.merged_summary], feed_dict=feed_dict)
                 self.save_summary(summary, train_step+self.conf.reload_step)
                 print('-'*30+'Validation'+'-'*30)
                 print('After {0} training step: val_loss= {1:.4f}, val_acc={2:.01%}'.format(train_step, loss, acc))
