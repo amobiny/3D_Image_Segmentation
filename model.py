@@ -73,23 +73,34 @@ class Unet_3D(object):
             self.train_op = optimizer.minimize(self.loss)
         self.sess.run(tf.global_variables_initializer())
         trainable_vars = tf.trainable_variables()
-        self.saver = tf.train.Saver(var_list=trainable_vars, max_to_keep=0)
+        self.saver = tf.train.Saver(var_list=trainable_vars, max_to_keep=1000)
         self.writer = tf.summary.FileWriter(self.conf.logdir, self.sess.graph)
 
     def configure_summary(self):
         summary_list = [tf.summary.scalar('train/loss', self.loss),
                         tf.summary.scalar('train/accuracy', self.accuracy),
-                        tf.summary.image('original_image',
+                        tf.summary.image('train/original_image',
                                          self.x[:, :, :, self.conf.depth / 2],
                                          max_outputs=self.conf.batch_size),
-                        tf.summary.image('prediction_mask',
+                        tf.summary.image('train/prediction_mask',
                                          tf.cast(tf.expand_dims(self.y_pred[:, :, :, self.conf.depth/2], -1), tf.float32),
                                          max_outputs=self.conf.batch_size),
-                        tf.summary.image('original_mask',
+                        tf.summary.image('train/original_mask',
                                          tf.cast(tf.expand_dims(self.y[:, :, :, self.conf.depth / 2], -1), tf.float32),
                                          max_outputs=self.conf.batch_size),
                         tf.summary.scalar('valid/loss', self.loss),
-                        tf.summary.scalar('valid/accuracy', self.accuracy)]
+                        tf.summary.scalar('valid/accuracy', self.accuracy),
+                        tf.summary.image('valid/original_image',
+                                         self.x[:, :, :, self.conf.depth / 2],
+                                         max_outputs=self.conf.batch_size),
+                        tf.summary.image('valid/prediction_mask',
+                                         tf.cast(tf.expand_dims(self.y_pred[:, :, :, self.conf.depth / 2], -1),
+                                                 tf.float32),
+                                         max_outputs=self.conf.batch_size),
+                        tf.summary.image('valid/original_mask',
+                                         tf.cast(tf.expand_dims(self.y[:, :, :, self.conf.depth / 2], -1), tf.float32),
+                                         max_outputs=self.conf.batch_size),
+                        ]
         self.train_summary = tf.summary.merge(summary_list[:5])
         self.valid_summary = tf.summary.merge(summary_list[5:])
 

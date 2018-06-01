@@ -14,7 +14,7 @@ flags.DEFINE_float('init_lr', 1e-3, 'learning rate')
 # Hyper-parameters
 flags.DEFINE_string('loss_type', 'cross-entropy', 'cross-entropy or dice')
 flags.DEFINE_float('lmbda', 1e-3, 'L2 regularization coefficient')
-flags.DEFINE_integer('batch_size', 1, 'training batch size')
+flags.DEFINE_integer('batch_size', 5, 'training batch size')
 
 # data
 flags.DEFINE_string('train_data_dir', './data/train_data/', 'Training data directory')
