@@ -91,7 +91,7 @@ class Unet_3D(object):
                         tf.summary.scalar('valid/loss', self.loss),
                         tf.summary.scalar('valid/accuracy', self.accuracy)]
         self.train_summary = tf.summary.merge(summary_list[:5])
-        self.valid_summary = tf.summary.merge(summary_list[2:])
+        self.valid_summary = tf.summary.merge(summary_list[5:])
 
     def save_summary(self, summary, step):
         print('----> Summarizing at step {}'.format(step))
