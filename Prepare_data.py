@@ -71,12 +71,17 @@ h5f.create_dataset('m_train', data=m_train)
 h5f.create_dataset('s_train', data=s_train)
 h5f.close()
 
+# h5f = h5py.File(train_path + 'train.h5', 'r')
+# m_train = h5f['m_train'][:]
+# s_train = h5f['s_train'][:]
+# h5f.close()
+
 # Create normalize, and save validation data
 valid_path = './data/valid_data/'
 x_valid, y_valid = get_data(valid_path, img_size=(64, 64, 32))
 
 # neither the best validation set, nor the best way to normalize
-x_valid = (x_valid-m_train[:64, :64, :32])/s_train[:64, :64, :32]
+x_valid = np.expand_dims((x_valid-m_train[:64, :64, :32])/s_train[:64, :64, :32], axis=-1)
 
 h5f = h5py.File(valid_path + 'valid.h5', 'w')
 h5f.create_dataset('x_valid', data=x_valid)

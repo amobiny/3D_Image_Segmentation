@@ -12,8 +12,8 @@ class Unet_3D(object):
         self.conf = conf
         self.k_size = self.conf.filter_size
         self.pool_size = self.conf.pool_filter_size
-        self.input_shape = [self.conf.batch_size, self.conf.height, self.conf.width, self.conf.depth, self.conf.channel]
-        self.output_shape = [self.conf.batch_size, self.conf.height, self.conf.width, self.conf.depth]
+        self.input_shape = [None, self.conf.height, self.conf.width, self.conf.depth, self.conf.channel]
+        self.output_shape = [None, self.conf.height, self.conf.width, self.conf.depth]
         self.create_placeholders()
         self.configure_network()
         self.configure_summary()
@@ -36,7 +36,7 @@ class Unet_3D(object):
             conv5 = conv_3d(conv4, self.k_size, 64, 'CONV5', is_train=self.is_training)
             conv6 = conv_3d(conv5, self.k_size, 32, 'CONV6', is_train=self.is_training)
             conv7 = conv_3d(conv6, self.k_size, 16, 'CONV7', is_train=self.is_training)
-            self.logits = conv_3d(conv7, 1, 1, 'CONV8', is_train=self.is_training, use_relu=False)
+            self.logits = conv_3d(conv7, 1, self.conf.num_cls, 'CONV8', is_train=self.is_training, use_relu=False)
 
             # pool1 = max_pool(conv2, self.pool_size, 'MaxPool1')
             # deconv1 = deconv_3d(pool1, self.k_size, 16, 'DECONV1', is_train=self.is_training)
@@ -100,7 +100,9 @@ class Unet_3D(object):
     def train(self):
         if self.conf.reload_step > 0:
             self.reload(self.conf.reload_step)
-        print('Start Training')
+            print('----> Continue Training from step #{}'.format(self.conf.reload_step))
+        else:
+            print('----> Start Training')
         data_reader = DataLoader(self.conf)
         for train_step in range(1, self.conf.max_step+1):
             print('Step: {}'.format(train_step))
@@ -123,7 +125,8 @@ class Unet_3D(object):
                 loss, acc, summary = self.sess.run([self.loss, self.accuracy, self.valid_summary], feed_dict=feed_dict)
                 self.save_summary(summary, train_step+self.conf.reload_step)
                 print('-'*30+'Validation'+'-'*30)
-                print('step: {0:<6}, val_loss= {1:.4f}, val_acc={2:.01%}'.format(train_step, loss, acc))
+                print('After {0} training step: val_loss= {1:.4f}, val_acc={2:.01%}'.format(train_step, loss, acc))
+                print('-'*70)
             if train_step % self.conf.SAVE_FREQ == 0:
                 self.save(train_step+self.conf.reload_step)
 
@@ -140,9 +143,9 @@ class Unet_3D(object):
         checkpoint_path = os.path.join(self.conf.modeldir, self.conf.model_name)
         model_path = checkpoint_path+'-'+str(step)
         if not os.path.exists(model_path+'.meta'):
-            print('------- No such checkpoint found', model_path)
+            print('----> No such checkpoint found', model_path)
             return
         print('----> Restoring the model...')
         self.saver.restore(self.sess, model_path)
-        print('Model successfully restored')
+        print('----> Model successfully restored')
 

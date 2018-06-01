@@ -6,6 +6,7 @@ class DataLoader(object):
 
     def __init__(self, cfg):
         self.train_data_dir = cfg.train_data_dir
+        self.valid_data_dir = cfg.valid_data_dir
         self.batch_size = cfg.batch_size
         self.num_tr = cfg.num_tr
         self.height, self.width, self.depth = cfg.height, cfg.width, cfg.depth
@@ -24,4 +25,8 @@ class DataLoader(object):
         return x, y
 
     def get_validation(self):
-        pass
+        h5f = h5py.File(self.valid_data_dir + 'valid.h5', 'r')
+        x = h5f['x_valid'][:]
+        y = h5f['y_valid'][:]
+        h5f.close()
+        return x, y
