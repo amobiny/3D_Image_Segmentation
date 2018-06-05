@@ -10,7 +10,7 @@ class DataLoader(object):
         self.batch_size = cfg.batch_size
         self.num_tr = cfg.num_tr
         self.height, self.width, self.depth = cfg.height, cfg.width, cfg.depth
-        self.max_bottom_left_front_corner = (cfg.height/2+1, cfg.width/2+1, cfg.depth/2+1)
+        self.max_bottom_left_front_corner = (cfg.height - 1, cfg.width - 1, cfg.depth - 1)
         # maximum value that the bottom left front corner of a cropped patch can take
 
     def next_batch(self):

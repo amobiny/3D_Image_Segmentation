@@ -26,7 +26,7 @@ flags.DEFINE_integer('depth', 32, 'Network input depth size')
 flags.DEFINE_integer('channel', 1, 'Network input channel size')
 
 # Directories
-flags.DEFINE_string('logdir', './log_dir', 'Logs directory')
+flags.DEFINE_string('logdir', './log_dir/', 'Logs directory')
 flags.DEFINE_string('modeldir', './model_dir', 'Model directory')
 flags.DEFINE_string('savedir', './result', 'Result saving directory')
 
