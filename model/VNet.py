@@ -26,7 +26,7 @@ class VNet(BaseModel):
             feature_list = list()
             for l in range(self.num_levels):
                 with tf.variable_scope('Encoder/level_' + str(l + 1)):
-                    x = self.conv_block(self.x, self.num_convs[l])
+                    x = self.conv_block_down(self.x, self.num_convs[l])
                     feature_list.append(x)
                     x = self.down_conv(x)
 
@@ -45,11 +45,13 @@ class VNet(BaseModel):
     def conv_block_down(self, layer_input, num_convolutions):
         x = layer_input
         n_channels = get_num_channels(x)
+        if n_channels == 1:     # hard-coded; for the first block
+            n_channels = 16
         for i in range(num_convolutions):
             x = conv_3d(inputs=x,
                         filter_size=self.k_size,
                         num_filters=n_channels,
-                        layer_name='conv_'+str(i+1),
+                        layer_name='conv_' + str(i + 1),
                         batch_norm=True,
                         is_train=self.is_training,
                         use_relu=False)
@@ -62,16 +64,22 @@ class VNet(BaseModel):
     def conv_block_up(self, layer_input, fine_grained_features, num_convolutions):
         x = tf.concat((layer_input, fine_grained_features), axis=-1)
         n_channels = get_num_channels(layer_input)
-        if num_convolutions == 1:
-            with tf.variable_scope('conv_' + str(1)):
-                x = convolution(x, [5, 5, 5, n_channels * 2, n_channels])
+        for i in range(num_convolutions):
+            x = conv_3d(inputs=x,
+                        filter_size=self.k_size,
+                        num_filters=n_channels,
+                        layer_name='conv_' + str(i + 1),
+                        batch_norm=True,
+                        is_train=self.is_training,
+                        use_relu=False)
+            if i == num_convolutions - 1:
                 x = x + layer_input
-                x = activation_fn(x)
-                x = tf.nn.dropout(x, keep_prob)
-            return x
+            x = tf.nn.relu(x)
+            x = tf.nn.dropout(x, self.keep_prob)
+        return x
 
     def down_conv(self, x):
-        num_out_channels = get_num_channels(x)*2
+        num_out_channels = get_num_channels(x) * 2
         x = conv_3d(inputs=x,
                     filter_size=2,
                     num_filters=num_out_channels,
@@ -82,7 +90,7 @@ class VNet(BaseModel):
         return x
 
     def up_conv(self, x, out_shape):
-        num_out_channels = get_num_channels(x)//2
+        num_out_channels = get_num_channels(x) // 2
         x = deconv_3d(inputs=x,
                       filter_size=2,
                       num_filters=num_out_channels,
