@@ -22,7 +22,7 @@ class BaseModel(object):
             self.y = tf.placeholder(tf.int64, self.output_shape, name='annotation')
             self.is_training = True
             # self.is_training = tf.placeholder_with_default(True, shape=(), name='is_training')
-            # self.keep_prob = tf.placeholder(tf.float32)
+            self.keep_prob = tf.placeholder(tf.float32)
 
     def loss_func(self):
         with tf.name_scope('Loss'):

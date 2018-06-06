@@ -13,7 +13,7 @@ class FCN_3D(BaseModel):
 
     def build_network(self):
         # Building network...
-        with tf.variable_scope('3D_UNET'):
+        with tf.variable_scope('FCN'):
             conv1 = conv_3d(self.x, self.k_size, 16, 'CONV1', is_train=self.is_training)
             conv2 = conv_3d(conv1, self.k_size, 32, 'CONV2', is_train=self.is_training)
             conv3 = conv_3d(conv2, self.k_size, 64, 'CONV3', is_train=self.is_training)

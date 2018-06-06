@@ -1,5 +1,7 @@
 import tensorflow as tf
 
+from utils import get_num_channels
+
 
 def weight_variable(name, shape):
     """
@@ -25,7 +27,7 @@ def bias_variable(name, shape):
                            initializer=initial)
 
 
-def conv_3d(inputs, filter_size, num_filters, layer_name, is_train=True,
+def conv_3d(inputs, filter_size, num_filters, layer_name, stride=1, is_train=True,
             batch_norm=False, add_reg=False, use_relu=True):
     """
     Create a 3D convolution layer
@@ -33,12 +35,13 @@ def conv_3d(inputs, filter_size, num_filters, layer_name, is_train=True,
     :param filter_size: size of the filter
     :param num_filters: number of filters (or output feature maps)
     :param layer_name: layer name
+    :param stride: convolution filter stride
     :param is_train: boolean to differentiate train and test (useful when applying batch normalization)
     :param add_reg: boolean to add norm-2 regularization (or not)
     :param use_relu: boolean to add ReLU non-linearity (or not)
     :return: The output array
     """
-    num_in_channel = inputs.get_shape().as_list()[-1]
+    num_in_channel = get_num_channels(inputs)
     with tf.variable_scope(layer_name):
         shape = [filter_size, filter_size, filter_size, num_in_channel, num_filters]
         weights = weight_variable(layer_name, shape=shape)
@@ -46,7 +49,7 @@ def conv_3d(inputs, filter_size, num_filters, layer_name, is_train=True,
         # biases = bias_variable(layer_name, [num_filters])
         layer = tf.nn.conv3d(input=inputs,
                              filter=weights,
-                             strides=[1, 1, 1, 1, 1],
+                             strides=[1, stride, stride, stride, 1],
                              padding="SAME")
         print('{}: {}'.format(layer_name, layer.get_shape()))
         layer = batch_norm_wrapper(layer, is_train)

@@ -5,6 +5,15 @@ import random
 import scipy.ndimage
 
 
+def get_num_channels(x):
+    """
+    returns the input's number of channels
+    :param x: input tensor with shape [batch_size, ..., num_channels]
+    :return: number of channels
+    """
+    return x.get_shape().as_list()[-1]
+
+
 def cross_entropy(y, logits, n_class):
     flat_logits = tf.reshape(logits, [-1, n_class])
     flat_labels = tf.reshape(y, [-1, n_class])
