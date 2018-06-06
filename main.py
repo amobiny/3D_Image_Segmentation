@@ -1,7 +1,8 @@
 import tensorflow as tf
 import argparse
 from config import args
-from model import Unet_3D
+from model.unet_3d import UNET_3D
+from model.fcn_3d import FCN_3D
 import os
 
 
@@ -11,7 +12,7 @@ def main(_):
         print('invalid mode: ', args.mode)
         print("Please input a mode: train, test, or predict")
     else:
-        model = Unet_3D(tf.Session(), args)
+        model = FCN_3D(tf.Session(), args)
         if not os.path.exists(args.modeldir):
             os.makedirs(args.modeldir)
         if not os.path.exists(args.logdir):

@@ -15,8 +15,6 @@ class BaseModel(object):
         self.input_shape = [None, self.conf.height, self.conf.width, self.conf.depth, self.conf.channel]
         self.output_shape = [None, self.conf.height, self.conf.width, self.conf.depth]
         self.create_placeholders()
-        self.configure_network()
-        self.configure_summary()
 
     def create_placeholders(self):
         with tf.name_scope('Input'):
@@ -25,25 +23,6 @@ class BaseModel(object):
             self.is_training = True
             # self.is_training = tf.placeholder_with_default(True, shape=(), name='is_training')
             # self.keep_prob = tf.placeholder(tf.float32)
-
-    def inference(self):
-        # Building network...
-        with tf.variable_scope('3D_UNET'):
-            conv1 = conv_3d(self.x, self.k_size, 16, 'CONV1', is_train=self.is_training)
-            conv2 = conv_3d(conv1, self.k_size, 32, 'CONV2', is_train=self.is_training)
-            conv3 = conv_3d(conv2, self.k_size, 64, 'CONV3', is_train=self.is_training)
-            conv4 = conv_3d(conv3, self.k_size, 128, 'CONV4', is_train=self.is_training)
-            conv5 = conv_3d(conv4, self.k_size, 64, 'CONV5', is_train=self.is_training)
-            conv6 = conv_3d(conv5, self.k_size, 32, 'CONV6', is_train=self.is_training)
-            conv7 = conv_3d(conv6, self.k_size, 16, 'CONV7', is_train=self.is_training)
-            self.logits = conv_3d(conv7, 1, self.conf.num_cls, 'CONV8', is_train=self.is_training, use_relu=False)
-
-            # pool1 = max_pool(conv2, self.pool_size, 'MaxPool1')
-            # deconv1 = deconv_3d(pool1, self.k_size, 16, 'DECONV1', is_train=self.is_training)
-            # merge1 = tf.concat([conv2, deconv1], -1, name='concat')
-            # self.logits = conv_3d(merge1, self.k_size, self.conf.num_cls, 'CONV3', is_train=self.is_training)
-            self.loss_func()
-            self.accuracy_func()
 
     def loss_func(self):
         with tf.name_scope('Loss'):
@@ -67,7 +46,8 @@ class BaseModel(object):
             self.accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32), name='accuracy_op')
 
     def configure_network(self):
-        self.inference()
+        self.loss_func()
+        self.accuracy_func()
         with tf.name_scope('Optimizer'):
             optimizer = tf.train.AdamOptimizer(learning_rate=self.conf.init_lr)
             self.train_op = optimizer.minimize(self.loss)
@@ -76,6 +56,7 @@ class BaseModel(object):
         self.saver = tf.train.Saver(var_list=trainable_vars, max_to_keep=1000)
         self.train_writer = tf.summary.FileWriter(self.conf.logdir + '/train/', self.sess.graph)
         self.valid_writer = tf.summary.FileWriter(self.conf.logdir + '/valid/')
+        self.configure_summary()
 
     def configure_summary(self):
         summary_list = [tf.summary.scalar('loss', self.loss),
