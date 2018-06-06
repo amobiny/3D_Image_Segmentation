@@ -1,18 +1,22 @@
 import tensorflow as tf
 import argparse
 from config import args
-from model.unet_3d import UNET_3D
-from model.fcn_3d import FCN_3D
+from model.UNet import UNET_3D
+from model.FCNet import FCN_3D
+from model.VNet import VNet
+
 import os
 
 
 def main(_):
-
     if args.mode not in ['train', 'test', 'predict']:
         print('invalid mode: ', args.mode)
         print("Please input a mode: train, test, or predict")
     else:
-        model = FCN_3D(tf.Session(), args)
+        model = VNet(tf.Session(),
+                     args,
+                     num_levels=4,
+                     num_convs=(1, 2, 3, 3))
         if not os.path.exists(args.modeldir):
             os.makedirs(args.modeldir)
         if not os.path.exists(args.logdir):
