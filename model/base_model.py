@@ -5,7 +5,7 @@ from utils import cross_entropy, dice_coeff
 import os
 
 
-class Unet_3D(object):
+class BaseModel(object):
 
     def __init__(self, sess, conf):
         self.sess = sess
