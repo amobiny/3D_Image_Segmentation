@@ -1,6 +1,6 @@
 import tensorflow as tf
 from base_model import BaseModel
-from ops import conv_3d
+from ops import conv_3d, deconv_3d
 from utils import get_num_channels
 
 
@@ -23,30 +23,72 @@ class VNet(BaseModel):
     def build_network(self):
         # Building network...
         with tf.variable_scope('V-Net'):
-            features = list()
-
+            feature_list = list()
             for l in range(self.num_levels):
                 with tf.variable_scope('Encoder/level_' + str(l + 1)):
                     x = self.conv_block(self.x, self.num_convs[l])
-                    features.append(x)
+                    feature_list.append(x)
                     x = self.down_conv(x)
 
             with tf.variable_scope('Bottom_level'):
-                x = self.conv_block(x, self.bottom_convs)
+                x = self.conv_block_down(x, self.bottom_convs)
 
-    def conv_block(self, layer_input, num_convolutions):
+            for l in reversed(range(self.num_levels)):
+                with tf.variable_scope('Decoder/level_' + str(l + 1)):
+                    f = feature_list[l]
+                    x = self.up_conv(x, tf.shape(f))
+                x = self.conv_block_up(x, f, self.num_convs[l])
+
+            self.logits = conv_3d(x, 1, self.conf.num_cls, 'Output_layer', batch_norm=True,
+                                  is_train=self.is_training, use_relu=False)
+
+    def conv_block_down(self, layer_input, num_convolutions):
         x = layer_input
         n_channels = get_num_channels(x)
         for i in range(num_convolutions):
-            x = conv_3d(x, self.k_size, n_channels, 'conv_'+str(i+1), self.is_training, use_relu=False)
+            x = conv_3d(inputs=x,
+                        filter_size=self.k_size,
+                        num_filters=n_channels,
+                        layer_name='conv_'+str(i+1),
+                        batch_norm=True,
+                        is_train=self.is_training,
+                        use_relu=False)
             if i == num_convolutions - 1:
                 x = x + layer_input
             x = tf.nn.relu(x)
             x = tf.nn.dropout(x, self.keep_prob)
         return x
 
+    def conv_block_up(self, layer_input, fine_grained_features, num_convolutions):
+        x = tf.concat((layer_input, fine_grained_features), axis=-1)
+        n_channels = get_num_channels(layer_input)
+        if num_convolutions == 1:
+            with tf.variable_scope('conv_' + str(1)):
+                x = convolution(x, [5, 5, 5, n_channels * 2, n_channels])
+                x = x + layer_input
+                x = activation_fn(x)
+                x = tf.nn.dropout(x, keep_prob)
+            return x
+
     def down_conv(self, x):
         num_out_channels = get_num_channels(x)*2
-        x = conv_3d(x, 2, num_out_channels, 'conv_down', 2, self.is_training)
+        x = conv_3d(inputs=x,
+                    filter_size=2,
+                    num_filters=num_out_channels,
+                    layer_name='conv_down',
+                    stride=2,
+                    batch_norm=True,
+                    is_train=self.is_training)
         return x
 
+    def up_conv(self, x, out_shape):
+        num_out_channels = get_num_channels(x)//2
+        x = deconv_3d(inputs=x,
+                      filter_size=2,
+                      num_filters=num_out_channels,
+                      layer_name='up_conv',
+                      stride=2,
+                      batch_norm=True,
+                      is_train=self.is_training,
+                      out_shape=out_shape)
+        return x
