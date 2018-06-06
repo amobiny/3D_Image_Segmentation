@@ -5,7 +5,9 @@ from ops import conv_3d
 
 class FCN_3D(BaseModel):
     def __init__(self, sess, conf):
-        BaseModel.__init__(self, sess, conf)
+        # BaseModel.__init__(self, sess, conf)
+        super(FCN_3D, self).__init__(sess, conf)
+        # super().__init__(sess, conf)  Python3
         self.build_network()
         self.configure_network()
 
