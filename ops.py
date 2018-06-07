@@ -36,6 +36,7 @@ def conv_3d(inputs, filter_size, num_filters, layer_name, stride=1, is_train=Tru
     :param num_filters: number of filters (or output feature maps)
     :param layer_name: layer name
     :param stride: convolution filter stride
+    :param batch_norm: boolean to use batch norm (or not)
     :param is_train: boolean to differentiate train and test (useful when applying batch normalization)
     :param add_reg: boolean to add norm-2 regularization (or not)
     :param use_relu: boolean to add ReLU non-linearity (or not)
@@ -46,28 +47,33 @@ def conv_3d(inputs, filter_size, num_filters, layer_name, stride=1, is_train=Tru
         shape = [filter_size, filter_size, filter_size, num_in_channel, num_filters]
         weights = weight_variable(layer_name, shape=shape)
         tf.summary.histogram('W', weights)
-        # biases = bias_variable(layer_name, [num_filters])
         layer = tf.nn.conv3d(input=inputs,
                              filter=weights,
                              strides=[1, stride, stride, stride, 1],
                              padding="SAME")
         print('{}: {}'.format(layer_name, layer.get_shape()))
-        layer = batch_norm_wrapper(layer, is_train)
-        # layer += biases
+        if batch_norm:
+            layer = batch_norm_wrapper(layer, is_train)
+        else:
+            biases = bias_variable(layer_name, [num_filters])
+            layer += biases
         if use_relu:
             layer = tf.nn.relu(layer)
         if add_reg:
-            tf.add_to_collection('weights', weights)
+            tf.add_to_collection('reg_weights', weights)
     return layer
 
 
-def deconv_3d(inputs, filter_size, num_filters, layer_name, is_train=True, add_reg=False, use_relu=True):
+def deconv_3d(inputs, filter_size, num_filters, layer_name, stride=1,
+              batch_norm=False, is_train=True, add_reg=False, use_relu=True, out_shape=None):
     """
     Create a 3D transposed-convolution layer
     :param inputs: input array
     :param filter_size: size of the filter
     :param num_filters: number of filters (or output feature maps)
     :param layer_name: layer name
+    :param stride: convolution filter stride
+    :param batch_norm: boolean to use batch norm (or not)
     :param is_train: boolean to differentiate train and test (useful when applying batch normalization)
     :param add_reg: boolean to add norm-2 regularization (or not)
     :param use_relu: boolean to add ReLU non-linearity (or not)
@@ -76,17 +82,21 @@ def deconv_3d(inputs, filter_size, num_filters, layer_name, is_train=True, add_r
     input_shape = inputs.get_shape().as_list()
     with tf.variable_scope(layer_name):
         kernel_shape = [filter_size, filter_size, filter_size, num_filters, input_shape[-1]]
-        out_shape = [input_shape[0]] + list(map(lambda x: x*2, input_shape[1:-1])) + [num_filters]
+        if not len(out_shape.get_shape().as_list()):    # if out_shape is not provided
+            out_shape = [input_shape[0]] + list(map(lambda x: x*2, input_shape[1:-1])) + [num_filters]
         weights = weight_variable(layer_name, shape=kernel_shape)
         # biases = bias_variable(layer_name, [num_filters])
         layer = tf.nn.conv3d_transpose(inputs,
                                        filter=weights,
                                        output_shape=out_shape,
-                                       strides=[1, 2, 2, 2, 1],
+                                       strides=[1, stride, stride, stride, 1],
                                        padding="SAME")
         print('{}: {}'.format(layer_name, layer.get_shape()))
-        layer = batch_norm_wrapper(layer, is_train)
-        # layer += biases
+        if batch_norm:
+            layer = batch_norm_wrapper(layer, is_train)
+        else:
+            biases = bias_variable(layer_name, [num_filters])
+            layer += biases
         if use_relu:
             layer = tf.nn.relu(layer)
         if add_reg:

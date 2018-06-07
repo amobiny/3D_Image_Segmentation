@@ -17,27 +17,30 @@ class VNet(BaseModel):
         # BaseModel.__init__(self, sess, conf)
         super(VNet, self).__init__(sess, conf)
         # super().__init__(sess, conf)  Python3
-        self.build_network()
+        self.build_network(self.x)
         self.configure_network()
 
-    def build_network(self):
+    def build_network(self, x):
         # Building network...
         with tf.variable_scope('V-Net'):
             feature_list = list()
-            for l in range(self.num_levels):
-                with tf.variable_scope('Encoder/level_' + str(l + 1)):
-                    x = self.conv_block_down(self.x, self.num_convs[l])
-                    feature_list.append(x)
-                    x = self.down_conv(x)
+
+            with tf.variable_scope('Encoder'):
+                for l in range(self.num_levels):
+                    with tf.variable_scope('level_' + str(l + 1)):
+                        x = self.conv_block_down(x, self.num_convs[l])
+                        feature_list.append(x)
+                        x = self.down_conv(x)
 
             with tf.variable_scope('Bottom_level'):
                 x = self.conv_block_down(x, self.bottom_convs)
 
-            for l in reversed(range(self.num_levels)):
-                with tf.variable_scope('Decoder/level_' + str(l + 1)):
-                    f = feature_list[l]
-                    x = self.up_conv(x, tf.shape(f))
-                x = self.conv_block_up(x, f, self.num_convs[l])
+            with tf.variable_scope('Decoder'):
+                for l in reversed(range(self.num_levels)):
+                    with tf.variable_scope('level_' + str(l + 1)):
+                        f = feature_list[l]
+                        x = self.up_conv(x, tf.shape(f))
+                        x = self.conv_block_up(x, f, self.num_convs[l])
 
             self.logits = conv_3d(x, 1, self.conf.num_cls, 'Output_layer', batch_norm=True,
                                   is_train=self.is_training, use_relu=False)
@@ -94,7 +97,7 @@ class VNet(BaseModel):
         x = deconv_3d(inputs=x,
                       filter_size=2,
                       num_filters=num_out_channels,
-                      layer_name='up_conv',
+                      layer_name='conv_up',
                       stride=2,
                       batch_norm=True,
                       is_train=self.is_training,

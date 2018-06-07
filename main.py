@@ -13,10 +13,7 @@ def main(_):
         print('invalid mode: ', args.mode)
         print("Please input a mode: train, test, or predict")
     else:
-        model = VNet(tf.Session(),
-                     args,
-                     num_levels=4,
-                     num_convs=(1, 2, 3, 3))
+        model = VNet(tf.Session(), args)
         if not os.path.exists(args.modeldir):
             os.makedirs(args.modeldir)
         if not os.path.exists(args.logdir):
