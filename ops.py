@@ -28,7 +28,7 @@ def bias_variable(name, shape):
 
 
 def conv_3d(inputs, filter_size, num_filters, layer_name, stride=1, is_train=True,
-            batch_norm=False, add_reg=False, use_relu=True):
+            batch_norm=False, add_reg=False, activation=tf.identity):
     """
     Create a 3D convolution layer
     :param inputs: input array
@@ -39,7 +39,7 @@ def conv_3d(inputs, filter_size, num_filters, layer_name, stride=1, is_train=Tru
     :param batch_norm: boolean to use batch norm (or not)
     :param is_train: boolean to differentiate train and test (useful when applying batch normalization)
     :param add_reg: boolean to add norm-2 regularization (or not)
-    :param use_relu: boolean to add ReLU non-linearity (or not)
+    :param activation: type of activation to be applied
     :return: The output array
     """
     num_in_channel = get_num_channels(inputs)
@@ -57,15 +57,14 @@ def conv_3d(inputs, filter_size, num_filters, layer_name, stride=1, is_train=Tru
         else:
             biases = bias_variable(layer_name, [num_filters])
             layer += biases
-        if use_relu:
-            layer = tf.nn.relu(layer)
+        layer = activation(layer, layer_name)
         if add_reg:
             tf.add_to_collection('reg_weights', weights)
     return layer
 
 
-def deconv_3d(inputs, filter_size, num_filters, layer_name, stride=1,
-              batch_norm=False, is_train=True, add_reg=False, use_relu=True, out_shape=None):
+def deconv_3d(inputs, filter_size, num_filters, layer_name, stride=1,batch_norm=False,
+              is_train=True, add_reg=False, activation=tf.identity, out_shape=None):
     """
     Create a 3D transposed-convolution layer
     :param inputs: input array
@@ -76,7 +75,8 @@ def deconv_3d(inputs, filter_size, num_filters, layer_name, stride=1,
     :param batch_norm: boolean to use batch norm (or not)
     :param is_train: boolean to differentiate train and test (useful when applying batch normalization)
     :param add_reg: boolean to add norm-2 regularization (or not)
-    :param use_relu: boolean to add ReLU non-linearity (or not)
+    :param activation: type of activation to be applied
+    :param out_shape: Tensor of output shape
     :return: The output array
     """
     input_shape = inputs.get_shape().as_list()
@@ -97,8 +97,7 @@ def deconv_3d(inputs, filter_size, num_filters, layer_name, stride=1,
         else:
             biases = bias_variable(layer_name, [num_filters])
             layer += biases
-        if use_relu:
-            layer = tf.nn.relu(layer)
+        layer = activation(layer, layer_name)
         if add_reg:
             tf.add_to_collection('weights', weights)
     return layer
@@ -147,3 +146,14 @@ def batch_norm_wrapper(inputs, is_training, decay=0.999, epsilon=1e-3):
             return tf.nn.batch_normalization(inputs, batch_mean, batch_var, beta, scale, epsilon)
     else:
         return tf.nn.batch_normalization(inputs, pop_mean, pop_var, beta, scale, epsilon)
+
+
+def prelu(x, name):
+    """
+    Applies parametric leaky ReLU
+    :param x: input tensor
+    :param name: variable name
+    :return: output tensor of the same shape
+    """
+    alpha = tf.get_variable('alpha_'+name, shape=x.get_shape()[-1], dtype=x.dtype, initializer=tf.constant_initializer(0.1))
+    return tf.maximum(0.0, x) + alpha * tf.minimum(0.0, x)

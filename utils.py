@@ -18,9 +18,13 @@ def cross_entropy(y, logits, n_class):
     flat_logits = tf.reshape(logits, [-1, n_class])
     flat_labels = tf.reshape(y, [-1, n_class])
     try:
-        loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(logits=flat_logits, labels=flat_labels))
+        loss = tf.reduce_mean(
+            tf.nn.softmax_cross_entropy_with_logits_v2(
+                logits=flat_logits, labels=flat_labels))
     except:
-        loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=flat_logits, labels=flat_labels))
+        loss = tf.reduce_mean(
+            tf.nn.softmax_cross_entropy_with_logits(
+                logits=flat_logits, labels=flat_labels))
     return loss
 
 

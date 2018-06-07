@@ -10,6 +10,7 @@ class BaseModel(object):
     def __init__(self, sess, conf):
         self.sess = sess
         self.conf = conf
+        self.act_fcn = tf.nn.relu
         self.k_size = self.conf.filter_size
         self.pool_size = self.conf.pool_filter_size
         self.input_shape = [None, self.conf.height, self.conf.width, self.conf.depth, self.conf.channel]
@@ -91,19 +92,19 @@ class BaseModel(object):
             self.is_training = True
             if train_step % self.conf.SUMMARY_FREQ == 0:
                 x_batch, y_batch = data_reader.next_batch()
-                feed_dict = {self.x: x_batch, self.y: y_batch}
+                feed_dict = {self.x: x_batch, self.y: y_batch, self.keep_prob: 0.7}
                 _, loss, acc, summary = self.sess.run([self.train_op, self.loss, self.accuracy, self.merged_summary],
                                                       feed_dict=feed_dict)
                 self.save_summary(summary, train_step+self.conf.reload_step)
                 print('step: {0:<6}, train_loss= {1:.4f}, train_acc={2:.01%}'.format(train_step, loss, acc))
             else:
                 x_batch, y_batch = data_reader.next_batch()
-                feed_dict = {self.x: x_batch, self.y: y_batch}
+                feed_dict = {self.x: x_batch, self.y: y_batch, self.keep_prob: 0.7}
                 self.sess.run(self.train_op, feed_dict=feed_dict)
             if train_step % self.conf.VAL_FREQ == 0:
                 self.is_training = False
                 x_val, y_val = data_reader.get_validation()
-                feed_dict = {self.x: x_val, self.y: y_val}
+                feed_dict = {self.x: x_val, self.y: y_val, self.keep_prob: 1}
                 loss, acc, summary = self.sess.run([self.loss, self.accuracy, self.merged_summary], feed_dict=feed_dict)
                 self.save_summary(summary, train_step+self.conf.reload_step)
                 print('-'*30+'Validation'+'-'*30)
