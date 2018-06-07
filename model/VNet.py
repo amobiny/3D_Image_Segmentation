@@ -61,7 +61,7 @@ class VNet(BaseModel):
                         is_train=self.is_training)
             if i == num_convolutions - 1:
                 x = x + layer_input
-            x = self.act_fcn(x, str(i + 1))
+            x = self.act_fcn(x, name='prelu_' + str(i + 1))
             x = tf.nn.dropout(x, self.keep_prob)
         return x
 
@@ -77,7 +77,7 @@ class VNet(BaseModel):
                         is_train=self.is_training)
             if i == num_convolutions - 1:
                 x = x + layer_input
-            x = self.act_fcn(x, str(i + 1))
+            x = self.act_fcn(x, name='prelu_' + str(i + 1))
             x = tf.nn.dropout(x, self.keep_prob)
         return x
 

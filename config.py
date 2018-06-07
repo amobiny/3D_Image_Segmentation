@@ -19,6 +19,7 @@ flags.DEFINE_integer('batch_size', 2, 'training batch size')
 # data
 flags.DEFINE_string('train_data_dir', './data/train_data/', 'Training data directory')
 flags.DEFINE_string('valid_data_dir', './data/valid_data/', 'Validation data directory')
+flags.DEFINE_boolean('data_augment', True, 'Adds augmentation to data')
 flags.DEFINE_integer('num_tr', 20, 'Total number of training images')
 flags.DEFINE_integer('height', 64, 'Network input height size')
 flags.DEFINE_integer('width', 64, 'Network input width size')

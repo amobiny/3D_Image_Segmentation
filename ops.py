@@ -57,7 +57,7 @@ def conv_3d(inputs, filter_size, num_filters, layer_name, stride=1, is_train=Tru
         else:
             biases = bias_variable(layer_name, [num_filters])
             layer += biases
-        layer = activation(layer, layer_name)
+        layer = activation(layer)
         if add_reg:
             tf.add_to_collection('reg_weights', weights)
     return layer
@@ -97,7 +97,7 @@ def deconv_3d(inputs, filter_size, num_filters, layer_name, stride=1,batch_norm=
         else:
             biases = bias_variable(layer_name, [num_filters])
             layer += biases
-        layer = activation(layer, layer_name)
+        layer = activation(layer)
         if add_reg:
             tf.add_to_collection('weights', weights)
     return layer
@@ -148,12 +148,14 @@ def batch_norm_wrapper(inputs, is_training, decay=0.999, epsilon=1e-3):
         return tf.nn.batch_normalization(inputs, pop_mean, pop_var, beta, scale, epsilon)
 
 
-def prelu(x, name):
+def prelu(x, name=None):
     """
     Applies parametric leaky ReLU
     :param x: input tensor
     :param name: variable name
     :return: output tensor of the same shape
     """
-    alpha = tf.get_variable('alpha_'+name, shape=x.get_shape()[-1], dtype=x.dtype, initializer=tf.constant_initializer(0.1))
-    return tf.maximum(0.0, x) + alpha * tf.minimum(0.0, x)
+    with tf.variable_scope(name_or_scope=name, default_name="prelu"):
+        alpha = tf.get_variable('alpha', shape=x.get_shape()[-1], dtype=x.dtype,
+                                initializer=tf.constant_initializer(0.1))
+        return tf.maximum(0.0, x) + alpha * tf.minimum(0.0, x)
