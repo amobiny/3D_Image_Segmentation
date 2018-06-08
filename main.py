@@ -1,5 +1,4 @@
 import tensorflow as tf
-import argparse
 from config import args
 from model.UNet import UNET_3D
 from model.FCNet import FCN_3D

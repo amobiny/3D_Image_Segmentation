@@ -1,6 +1,5 @@
 import tensorflow as tf
 from Data_Loader import DataLoader
-from ops import conv_3d, max_pool, deconv_3d
 from utils import cross_entropy, dice_coeff
 import os
 

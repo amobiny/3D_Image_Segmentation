@@ -1,10 +1,14 @@
+import random
 import numpy as np
 import h5py
+import scipy.ndimage
 
 
 class DataLoader(object):
 
     def __init__(self, cfg):
+        self.augment = cfg.data_augment
+        self.max_angle = cfg.max_angle
         self.train_data_dir = cfg.train_data_dir
         self.valid_data_dir = cfg.valid_data_dir
         self.batch_size = cfg.batch_size
@@ -19,9 +23,11 @@ class DataLoader(object):
         left = np.random.randint(self.max_bottom_left_front_corner[0])
         front = np.random.randint(self.max_bottom_left_front_corner[2])
         h5f = h5py.File(self.train_data_dir + 'train.h5', 'r')
-        x = h5f['x_train'][img_idx, bottom:bottom+self.height, left:left+self.width, front:front+self.depth, :]
-        y = h5f['y_train'][img_idx, bottom:bottom+self.height, left:left+self.width, front:front+self.depth]
+        x = h5f['x_train'][img_idx, bottom:bottom + self.height, left:left + self.width, front:front + self.depth,:]
+        y = h5f['y_train'][img_idx, bottom:bottom + self.height, left:left + self.width, front:front + self.depth]
         h5f.close()
+        if self.augment:
+            x, y = random_rotation_3d(x, y, max_angle=self.max_angle)
         return x, y
 
     def get_validation(self):
@@ -30,3 +36,42 @@ class DataLoader(object):
         y = h5f['y_valid'][:]
         h5f.close()
         return x, y
+
+
+def random_rotation_3d(img_batch, mask_batch, max_angle):
+    """
+    Randomly rotate an image by a random angle (-max_angle, max_angle)
+    :param img_batch: batch of 3D images
+    :param mask_batch: batch of 3D masks
+    :param max_angle: `float`. The maximum rotation angle
+    :return: batch of rotated 3D images and masks
+    """
+    size = img_batch.shape
+    img_batch = np.squeeze(img_batch, axis=-1)
+    img_batch_rot, mask_batch_rot = img_batch, mask_batch
+    for i in range(img_batch.shape[0]):
+        axis_rot = np.random.randint(2, size=3)
+        if np.sum(axis_rot):    # if rotating along any axis
+            image, mask = img_batch[i], mask_batch[i]
+            if axis_rot[0]:
+                # rotate along z-axis
+                angle = random.uniform(-max_angle, max_angle)
+                image = rotate(image, angle)
+                mask = rotate(mask, angle)
+            if axis_rot[1]:
+                # rotate along y-axis
+                angle = random.uniform(-max_angle, max_angle)
+                image = rotate(image, angle)
+                mask = rotate(mask, angle)
+            if axis_rot[2]:
+                # rotate along x-axis
+                angle = random.uniform(-max_angle, max_angle)
+                image = rotate(image, angle)
+                mask = rotate(mask, angle)
+            img_batch_rot[i] = image
+            mask_batch_rot[i] = mask
+    return img_batch_rot.reshape(size), mask_batch
+
+
+def rotate(x, angle):
+    return scipy.ndimage.interpolation.rotate(x, angle, mode='nearest', axes=(0, 1), reshape=False)
