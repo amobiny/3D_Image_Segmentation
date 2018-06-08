@@ -1,6 +1,6 @@
 import tensorflow as tf
 from Data_Loader import DataLoader
-from utils import cross_entropy, dice_coeff
+from utils import cross_entropy, dice_coeff, count_parameters
 import os
 import numpy as np
 
@@ -133,3 +133,6 @@ class BaseModel(object):
         self.saver.restore(self.sess, model_path)
         print('----> Model successfully restored')
 
+    def count_params(self):
+        """Returns number of trainable parameters."""
+        return count_parameters(self.sess)

@@ -74,3 +74,22 @@ def add_noise(batch, mean=0, var=0.1, amount=0.01, mode='pepper'):
             image[coords] = 0
         batch_noisy[ii] = image
     return batch_noisy.reshape(original_size)
+
+
+def count_parameters(sess):
+    """Returns the number of parameters of a computational graph."""
+
+    variables_names = [v.name for v in tf.trainable_variables()]
+    values = sess.run(variables_names)
+    n_params = 0
+
+    for k, v in zip(variables_names, values):
+        print '-'.center(140, '-')
+        print '{:60s}\t\tShape: {:20s}\t{:20} parameters'.format(k, v.shape, v.size)
+
+        n_params += v.size
+
+    print '-'.center(140, '-')
+    print 'Total # parameters:\t\t{}\n\n'.format(n_params)
+
+    return n_params

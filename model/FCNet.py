@@ -3,10 +3,10 @@ from base_model import BaseModel
 from ops import conv_3d
 
 
-class FCN_3D(BaseModel):
+class FCN(BaseModel):
     def __init__(self, sess, conf):
         # BaseModel.__init__(self, sess, conf)
-        super(FCN_3D, self).__init__(sess, conf)
+        super(FCN, self).__init__(sess, conf)
         self.act_fcn = tf.nn.relu
         self.k_size = self.conf.filter_size
         self.pool_size = self.conf.pool_filter_size
