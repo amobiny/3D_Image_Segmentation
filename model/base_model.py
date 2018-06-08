@@ -2,6 +2,7 @@ import tensorflow as tf
 from Data_Loader import DataLoader
 from utils import cross_entropy, dice_coeff
 import os
+import numpy as np
 
 
 class BaseModel(object):
@@ -9,9 +10,7 @@ class BaseModel(object):
     def __init__(self, sess, conf):
         self.sess = sess
         self.conf = conf
-        self.act_fcn = tf.nn.relu
-        self.k_size = self.conf.filter_size
-        self.pool_size = self.conf.pool_filter_size
+        self.is_training = True
         self.input_shape = [None, self.conf.height, self.conf.width, self.conf.depth, self.conf.channel]
         self.output_shape = [None, self.conf.height, self.conf.width, self.conf.depth]
         self.create_placeholders()
@@ -20,7 +19,6 @@ class BaseModel(object):
         with tf.name_scope('Input'):
             self.x = tf.placeholder(tf.float32, self.input_shape, name='input')
             self.y = tf.placeholder(tf.int64, self.output_shape, name='annotation')
-            self.is_training = True
             # self.is_training = tf.placeholder_with_default(True, shape=(), name='is_training')
             self.keep_prob = tf.placeholder(tf.float32)
 
@@ -57,6 +55,10 @@ class BaseModel(object):
         self.train_writer = tf.summary.FileWriter(self.conf.logdir + '/train/', self.sess.graph)
         self.valid_writer = tf.summary.FileWriter(self.conf.logdir + '/valid/')
         self.configure_summary()
+        print('*'*50)
+        print('Total number of trainable parameters: {}'.
+              format(np.sum([np.prod(v.get_shape().as_list()) for v in tf.trainable_variables()])))
+        print('*'*50)
 
     def configure_summary(self):
         summary_list = [tf.summary.scalar('loss', self.loss),
