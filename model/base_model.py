@@ -46,27 +46,27 @@ class BaseModel(object):
     def configure_network(self):
         self.loss_func()
         self.accuracy_func()
-        self.global_step = tf.get_variable('global_step', [], initializer=tf.constant_initializer(0), trainable=False)
-        self.steps_per_epoch = self.conf.N // self.conf.batch_size
-        self.learning_rate = tf.train.exponential_decay(self.conf.init_lr,
-                                                        self.global_step,
-                                                        self.steps_per_epoch,
-                                                        0.97,
-                                                        staircase=True)
-        self.learning_rate = tf.maximum(self.learning_rate, self.conf.lr_min)
+        global_step = tf.get_variable('global_step', [], initializer=tf.constant_initializer(0), trainable=False)
+        steps_per_epoch = self.conf.N // self.conf.batch_size
+        learning_rate = tf.train.exponential_decay(self.conf.init_lr,
+                                                   global_step,
+                                                   steps_per_epoch,
+                                                   0.97,
+                                                   staircase=True)
+        self.learning_rate = tf.maximum(learning_rate, self.conf.lr_min)
         with tf.name_scope('Optimizer'):
-            optimizer = tf.train.AdamOptimizer(learning_rate=self.conf.init_lr)
-            self.train_op = optimizer.minimize(self.loss, global_step=self.global_step)
+            optimizer = tf.train.AdamOptimizer(learning_rate=self.learning_rate)
+            self.train_op = optimizer.minimize(self.loss, global_step=global_step)
         self.sess.run(tf.global_variables_initializer())
         trainable_vars = tf.trainable_variables()
         self.saver = tf.train.Saver(var_list=trainable_vars, max_to_keep=1000)
         self.train_writer = tf.summary.FileWriter(self.conf.logdir + '/train/', self.sess.graph)
         self.valid_writer = tf.summary.FileWriter(self.conf.logdir + '/valid/')
         self.configure_summary()
-        print('*'*50)
+        print('*' * 50)
         print('Total number of trainable parameters: {}'.
               format(np.sum([np.prod(v.get_shape().as_list()) for v in tf.trainable_variables()])))
-        print('*'*50)
+        print('*' * 50)
 
     def configure_summary(self):
         summary_list = [tf.summary.scalar('learning_rate', self.learning_rate),
@@ -76,7 +76,8 @@ class BaseModel(object):
                                          self.x[:, :, :, self.conf.depth / 2],
                                          max_outputs=self.conf.batch_size),
                         tf.summary.image('train/prediction_mask',
-                                         tf.cast(tf.expand_dims(self.y_pred[:, :, :, self.conf.depth/2], -1), tf.float32),
+                                         tf.cast(tf.expand_dims(self.y_pred[:, :, :, self.conf.depth / 2], -1),
+                                                 tf.float32),
                                          max_outputs=self.conf.batch_size),
                         tf.summary.image('train/original_mask',
                                          tf.cast(tf.expand_dims(self.y[:, :, :, self.conf.depth / 2], -1), tf.float32),
@@ -97,7 +98,7 @@ class BaseModel(object):
         else:
             print('----> Start Training')
         data_reader = DataLoader(self.conf)
-        for train_step in range(1, self.conf.max_step+1):
+        for train_step in range(1, self.conf.max_step + 1):
             print('Step: {}'.format(train_step))
             self.is_training = True
             if train_step % self.conf.SUMMARY_FREQ == 0:
@@ -105,7 +106,7 @@ class BaseModel(object):
                 feed_dict = {self.x: x_batch, self.y: y_batch, self.keep_prob: 0.7}
                 _, loss, acc, summary = self.sess.run([self.train_op, self.loss, self.accuracy, self.merged_summary],
                                                       feed_dict=feed_dict)
-                self.save_summary(summary, train_step+self.conf.reload_step)
+                self.save_summary(summary, train_step + self.conf.reload_step)
                 print('step: {0:<6}, train_loss= {1:.4f}, train_acc={2:.01%}'.format(train_step, loss, acc))
             else:
                 x_batch, y_batch = data_reader.next_batch()
@@ -116,12 +117,12 @@ class BaseModel(object):
                 x_val, y_val = data_reader.get_validation()
                 feed_dict = {self.x: x_val, self.y: y_val, self.keep_prob: 1}
                 loss, acc, summary = self.sess.run([self.loss, self.accuracy, self.merged_summary], feed_dict=feed_dict)
-                self.save_summary(summary, train_step+self.conf.reload_step)
-                print('-'*30+'Validation'+'-'*30)
+                self.save_summary(summary, train_step + self.conf.reload_step)
+                print('-' * 30 + 'Validation' + '-' * 30)
                 print('After {0} training step: val_loss= {1:.4f}, val_acc={2:.01%}'.format(train_step, loss, acc))
-                print('-'*70)
+                print('-' * 70)
             if train_step % self.conf.SAVE_FREQ == 0:
-                self.save(train_step+self.conf.reload_step)
+                self.save(train_step + self.conf.reload_step)
 
     def test(self):
         pass
@@ -134,8 +135,8 @@ class BaseModel(object):
 
     def reload(self, step):
         checkpoint_path = os.path.join(self.conf.modeldir, self.conf.model_name)
-        model_path = checkpoint_path+'-'+str(step)
-        if not os.path.exists(model_path+'.meta'):
+        model_path = checkpoint_path + '-' + str(step)
+        if not os.path.exists(model_path + '.meta'):
             print('----> No such checkpoint found', model_path)
             return
         print('----> Restoring the model...')
