@@ -46,9 +46,17 @@ class BaseModel(object):
     def configure_network(self):
         self.loss_func()
         self.accuracy_func()
+        self.global_step = tf.get_variable('global_step', [], initializer=tf.constant_initializer(0), trainable=False)
+        self.steps_per_epoch = self.conf.N // self.conf.batch_size
+        self.learning_rate = tf.train.exponential_decay(self.conf.init_lr,
+                                                        self.global_step,
+                                                        self.steps_per_epoch,
+                                                        0.97,
+                                                        staircase=True)
+        self.learning_rate = tf.maximum(self.learning_rate, self.conf.lr_min)
         with tf.name_scope('Optimizer'):
             optimizer = tf.train.AdamOptimizer(learning_rate=self.conf.init_lr)
-            self.train_op = optimizer.minimize(self.loss)
+            self.train_op = optimizer.minimize(self.loss, global_step=self.global_step)
         self.sess.run(tf.global_variables_initializer())
         trainable_vars = tf.trainable_variables()
         self.saver = tf.train.Saver(var_list=trainable_vars, max_to_keep=1000)
@@ -61,7 +69,8 @@ class BaseModel(object):
         print('*'*50)
 
     def configure_summary(self):
-        summary_list = [tf.summary.scalar('loss', self.loss),
+        summary_list = [tf.summary.scalar('learning_rate', self.learning_rate),
+                        tf.summary.scalar('loss', self.loss),
                         tf.summary.scalar('accuracy', self.accuracy),
                         tf.summary.image('train/original_image',
                                          self.x[:, :, :, self.conf.depth / 2],
