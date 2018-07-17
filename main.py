@@ -2,6 +2,7 @@ import tensorflow as tf
 from config import args
 from model.UNet import UNET_3D
 from model.FCNet import FCN
+from model.Tiramisu import Tiramisu
 from model.VNet import VNet
 
 import os
@@ -12,7 +13,7 @@ def main(_):
         print('invalid mode: ', args.mode)
         print("Please input a mode: train, test, or predict")
     else:
-        model = VNet(tf.Session(), args)
+        model = Tiramisu(tf.Session(), args)
         if not os.path.exists(args.modeldir+args.run_name):
             os.makedirs(args.modeldir+args.run_name)
         if not os.path.exists(args.logdir+args.run_name):

@@ -73,14 +73,14 @@ class BaseModel(object):
                         tf.summary.scalar('loss', self.mean_loss),
                         tf.summary.scalar('accuracy', self.mean_accuracy),
                         tf.summary.image('train/original_image',
-                                         self.x[:, :, :, self.conf.depth / 2],
+                                         self.x[:, :, :, int(self.conf.depth/2)],
                                          max_outputs=self.conf.batch_size),
                         tf.summary.image('train/prediction_mask',
-                                         tf.cast(tf.expand_dims(self.y_pred[:, :, :, self.conf.depth / 2], -1),
+                                         tf.cast(tf.expand_dims(self.y_pred[:, :, :, int(self.conf.depth/2)], -1),
                                                  tf.float32),
                                          max_outputs=self.conf.batch_size),
                         tf.summary.image('train/original_mask',
-                                         tf.cast(tf.expand_dims(self.y[:, :, :, self.conf.depth / 2], -1), tf.float32),
+                                         tf.cast(tf.expand_dims(self.y[:, :, :, int(self.conf.depth/2)], -1), tf.float32),
                                          max_outputs=self.conf.batch_size)]
         self.merged_summary = tf.summary.merge(summary_list)
 

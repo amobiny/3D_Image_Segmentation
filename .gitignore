@@ -106,5 +106,7 @@ ENV/
 
 .DS_Store
 MNIST_data/
+Results/
 .idea
 logs
+*.pyc

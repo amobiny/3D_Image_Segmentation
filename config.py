@@ -2,7 +2,7 @@ import tensorflow as tf
 import time
 
 flags = tf.app.flags
-flags.DEFINE_string('mode', 'test', 'train or test')
+flags.DEFINE_string('mode', 'train', 'train or test')
 flags.DEFINE_integer('reload_step', 0, 'Reload step to continue training')
 flags.DEFINE_integer('step_num', 100, 'Reload step to test the model')
 

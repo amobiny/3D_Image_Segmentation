@@ -63,7 +63,7 @@ def conv_3d(inputs, filter_size, num_filters, layer_name, stride=1, is_train=Tru
     return layer
 
 
-def deconv_3d(inputs, filter_size, num_filters, layer_name, stride=1,batch_norm=False,
+def deconv_3d(inputs, filter_size, num_filters, layer_name, stride=1, batch_norm=False,
               is_train=True, add_reg=False, activation=tf.identity, out_shape=None):
     """
     Create a 3D transposed-convolution layer
@@ -100,6 +100,38 @@ def deconv_3d(inputs, filter_size, num_filters, layer_name, stride=1,batch_norm=
         layer = activation(layer)
         if add_reg:
             tf.add_to_collection('weights', weights)
+    return layer
+
+
+def BN_Relu_conv_3d(inputs, filter_size, num_filters, layer_name, stride=1, is_train=True,
+                    batch_norm=True, use_relu=True, add_reg=False):
+    """
+    Create a BN, ReLU, and 3D convolution layer
+    :param inputs: input array
+    :param filter_size: size of the filter
+    :param num_filters: number of filters (or output feature maps)
+    :param layer_name: layer name
+    :param stride: convolution filter stride
+    :param batch_norm: boolean to use batch norm (or not)
+    :param is_train: boolean to differentiate train and test (useful when applying batch normalization)
+    :param add_reg: boolean to add norm-2 regularization (or not)
+    :param use_relu:
+    :return: The output array
+    """
+    num_in_channel = get_num_channels(inputs)
+    with tf.variable_scope(layer_name):
+        if batch_norm:
+            inputs = batch_norm_wrapper(inputs, is_train)
+        if use_relu:
+            inputs = tf.nn.relu(inputs)
+        shape = [filter_size, filter_size, filter_size, num_in_channel, num_filters]
+        weights = weight_variable(layer_name, shape=shape)
+        layer = tf.nn.conv3d(input=inputs,
+                             filter=weights,
+                             strides=[1, stride, stride, stride, 1],
+                             padding="SAME")
+        if add_reg:
+            tf.add_to_collection('reg_weights', weights)
     return layer
 
 
