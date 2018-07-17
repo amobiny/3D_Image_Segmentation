@@ -1,6 +1,6 @@
 import tensorflow as tf
 from base_model import BaseModel
-from ops import conv_3d, deconv_3d, prelu
+from model.ops import conv_3d, deconv_3d, prelu
 from utils import get_num_channels
 
 
@@ -12,14 +12,13 @@ class VNet(BaseModel):
                  act_fcn=prelu):
 
         super(VNet, self).__init__(sess, conf)
+        # super().__init__(sess, conf)  Python3
         self.num_levels = num_levels
         self.num_convs = num_convs
         self.bottom_convs = bottom_convs
         self.k_size = self.conf.filter_size
         self.down_conv_factor = 2
-        # BaseModel.__init__(self, sess, conf)
         self.act_fcn = act_fcn
-        # super().__init__(sess, conf)  Python3
         self.build_network(self.x)
         self.configure_network()
 

@@ -13,17 +13,14 @@ def main(_):
         print("Please input a mode: train, test, or predict")
     else:
         model = VNet(tf.Session(), args)
-        # model.count_params()
-        if not os.path.exists(args.modeldir):
-            os.makedirs(args.modeldir)
-        if not os.path.exists(args.logdir):
-            os.makedirs(args.logdir)
-        if not os.path.exists(args.savedir):
-            os.makedirs(args.savedir)
+        if not os.path.exists(args.modeldir+args.run_name):
+            os.makedirs(args.modeldir+args.run_name)
+        if not os.path.exists(args.logdir+args.run_name):
+            os.makedirs(args.logdir+args.run_name)
         if args.mode == 'train':
             model.train()
         elif args.mode == 'test':
-            model.test()
+            model.test(step_num=args.step_num)
 
 
 if __name__ == '__main__':

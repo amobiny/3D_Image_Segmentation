@@ -11,31 +11,44 @@ class DataLoader(object):
         self.max_angle = cfg.max_angle
         self.train_data_dir = cfg.train_data_dir
         self.valid_data_dir = cfg.valid_data_dir
+        self.test_data_dir = cfg.test_data_dir
         self.batch_size = cfg.batch_size
         self.num_tr = cfg.num_tr
         self.height, self.width, self.depth = cfg.height, cfg.width, cfg.depth
         self.max_bottom_left_front_corner = (cfg.height - 1, cfg.width - 1, cfg.depth - 1)
         # maximum value that the bottom left front corner of a cropped patch can take
 
-    def next_batch(self):
-        img_idx = np.sort(np.random.choice(self.num_tr, replace=False, size=self.batch_size))
-        bottom = np.random.randint(self.max_bottom_left_front_corner[1])
-        left = np.random.randint(self.max_bottom_left_front_corner[0])
-        front = np.random.randint(self.max_bottom_left_front_corner[2])
-        h5f = h5py.File(self.train_data_dir + 'train.h5', 'r')
-        x = h5f['x_train'][img_idx, bottom:bottom + self.height, left:left + self.width, front:front + self.depth,:]
-        y = h5f['y_train'][img_idx, bottom:bottom + self.height, left:left + self.width, front:front + self.depth]
+    def next_batch(self, start=None, end=None, mode='train'):
+        if mode == 'train':
+            img_idx = np.sort(np.random.choice(self.num_tr, replace=False, size=self.batch_size))
+            bottom = np.random.randint(self.max_bottom_left_front_corner[1])
+            left = np.random.randint(self.max_bottom_left_front_corner[0])
+            front = np.random.randint(self.max_bottom_left_front_corner[2])
+            h5f = h5py.File(self.train_data_dir + 'train.h5', 'r')
+            x = h5f['x_train'][img_idx, bottom:bottom + self.height, left:left + self.width, front:front + self.depth,:]
+            y = h5f['y_train'][img_idx, bottom:bottom + self.height, left:left + self.width, front:front + self.depth]
+            if self.augment:
+                x, y = random_rotation_3d(x, y, max_angle=self.max_angle)
+        elif mode == 'valid':
+            h5f = h5py.File(self.valid_data_dir + 'valid.h5', 'r')
+            x = h5f['x_valid'][start:end]
+            y = h5f['y_valid'][start:end]
+        elif mode == 'test':
+            h5f = h5py.File(self.test_data_dir + 'test.h5', 'r')
+            x = h5f['x_test'][start:end]
+            y = h5f['y_test'][start:end]
         h5f.close()
-        if self.augment:
-            x, y = random_rotation_3d(x, y, max_angle=self.max_angle)
         return x, y
 
-    def get_validation(self):
-        h5f = h5py.File(self.valid_data_dir + 'valid.h5', 'r')
-        x = h5f['x_valid'][:]
-        y = h5f['y_valid'][:]
+    def count_num_samples(self, mode='valid'):
+        if mode == 'valid':
+            h5f = h5py.File(self.valid_data_dir + 'valid.h5', 'r')
+            num_ = h5f['y_valid'][:].shape[0]
+        elif mode == 'test':
+            h5f = h5py.File(self.test_data_dir + 'test.h5', 'r')
+            num_ = h5f['y_test'][:].shape[0]
         h5f.close()
-        return x, y
+        return num_
 
 
 def random_rotation_3d(img_batch, mask_batch, max_angle):

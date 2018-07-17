@@ -1,6 +1,6 @@
 import tensorflow as tf
 from base_model import BaseModel
-from ops import conv_3d
+from model.ops import conv_3d
 
 
 class FCN(BaseModel):
