@@ -1,6 +1,6 @@
 import tensorflow as tf
 from Data_Loader import DataLoader
-from utils import cross_entropy, dice_coeff, count_parameters
+from utils import cross_entropy, dice_coeff
 import os
 import numpy as np
 

@@ -8,8 +8,8 @@ flags.DEFINE_integer('step_num', 100, 'Reload step to test the model')
 
 # Training logs
 flags.DEFINE_integer('max_step', 250000, '# of step for training')
-flags.DEFINE_integer('SAVE_FREQ', 100, 'Number of steps to save model')
-flags.DEFINE_integer('SUMMARY_FREQ', 10, 'Number of step to save summary')
+flags.DEFINE_integer('SAVE_FREQ', 1000, 'Number of steps to save model')
+flags.DEFINE_integer('SUMMARY_FREQ', 100, 'Number of step to save summary')
 flags.DEFINE_integer('VAL_FREQ', 100, 'Number of step to evaluate the network on Validation data')
 flags.DEFINE_float('init_lr', 1e-3, 'Initial learning rate')
 flags.DEFINE_float('lr_min', 1e-5, 'Minimum learning rate')
@@ -22,9 +22,9 @@ flags.DEFINE_integer('val_batch_size', 2, 'training batch size')
 
 # data
 flags.DEFINE_integer('num_tr', 20, 'Total number of training images')
-flags.DEFINE_string('train_data_dir', './data/train_data/', 'Training data directory')
-flags.DEFINE_string('valid_data_dir', './data/valid_data/', 'Validation data directory')
-flags.DEFINE_string('test_data_dir', './data/test_data/', 'Test data directory')
+flags.DEFINE_string('train_data_dir', './data/NVdata/train_data/', 'Training data directory')
+flags.DEFINE_string('valid_data_dir', './data/NVdata/valid_data/', 'Validation data directory')
+flags.DEFINE_string('test_data_dir', './data/NVdata/test_data/', 'Test data directory')
 flags.DEFINE_boolean('data_augment', True, 'Adds augmentation to data')
 flags.DEFINE_integer('max_angle', 40, 'Maximum rotation angle along each axis; when applying augmentation')
 flags.DEFINE_integer('height', 64, 'Network input height size')
@@ -39,10 +39,11 @@ flags.DEFINE_string('modeldir', './Results/model_dir/', 'Model directory')
 flags.DEFINE_string('model_name', 'model', 'Model file name')
 
 # network architecture
-flags.DEFINE_integer('num_cls', 2, 'Number of output classes')
+flags.DEFINE_integer('num_cls', 3, 'Number of output classes')
 flags.DEFINE_boolean('use_BN', True, 'Adds Batch-Normalization to all convolutional layers')
 flags.DEFINE_integer('start_channel_num', 16, 'start number of outputs for the first conv layer')
 flags.DEFINE_integer('filter_size', 3, 'Filter size for the conv and deconv layers')
 flags.DEFINE_integer('pool_filter_size', 2, 'Filter size for pooling layers')
+flags.DEFINE_integer('drop_out_rate', 0.9, 'Dropout rate')
 
 args = tf.app.flags.FLAGS

@@ -1,5 +1,5 @@
 import tensorflow as tf
-from base_model import BaseModel
+from model.base_model import BaseModel
 from model.ops import conv_3d, deconv_3d, prelu
 from utils import get_num_channels
 

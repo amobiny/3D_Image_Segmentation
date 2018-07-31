@@ -1,4 +1,4 @@
-from base_model import BaseModel
+from model.base_model import BaseModel
 
 
 class UNET_3D(BaseModel):

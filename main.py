@@ -4,8 +4,8 @@ from model.UNet import UNET_3D
 from model.FCNet import FCN
 from model.Tiramisu import Tiramisu
 from model.VNet import VNet
-
 import os
+from utils import write_spec
 
 
 def main(_):
@@ -19,6 +19,7 @@ def main(_):
         if not os.path.exists(args.logdir+args.run_name):
             os.makedirs(args.logdir+args.run_name)
         if args.mode == 'train':
+            write_spec(args)
             model.train()
         elif args.mode == 'test':
             model.test(step_num=args.step_num)

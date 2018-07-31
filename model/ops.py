@@ -1,5 +1,4 @@
 import tensorflow as tf
-
 from utils import get_num_channels
 
 
