@@ -44,6 +44,7 @@ flags.DEFINE_boolean('use_BN', True, 'Adds Batch-Normalization to all convolutio
 flags.DEFINE_integer('start_channel_num', 16, 'start number of outputs for the first conv layer')
 flags.DEFINE_integer('filter_size', 3, 'Filter size for the conv and deconv layers')
 flags.DEFINE_integer('pool_filter_size', 2, 'Filter size for pooling layers')
-flags.DEFINE_integer('drop_out_rate', 0.9, 'Dropout rate')
+flags.DEFINE_float('keep_prob', 0.8, 'Probability of keeping a unit in drop-out')
+flags.DEFINE_integer('growth_rate', 16, 'Growth rate of the DenseNet')
 
 args = tf.app.flags.FLAGS

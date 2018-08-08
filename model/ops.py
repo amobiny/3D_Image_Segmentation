@@ -142,14 +142,22 @@ def max_pool(x, ksize, name):
     :param name: layer name
     :return: The output array
     """
-    with tf.variable_scope(name):
-        maxpool = tf.nn.max_pool3d(x,
-                                   ksize=[1, ksize, ksize, ksize, 1],
-                                   strides=[1, 2, 2, 2, 1],
-                                   padding="SAME",
-                                   name=name)
-        print('{}: {}'.format(name, maxpool.get_shape()))
-        return maxpool
+    maxpool = tf.nn.max_pool3d(x,
+                               ksize=[1, ksize, ksize, ksize, 1],
+                               strides=[1, 2, 2, 2, 1],
+                               padding="SAME",
+                               name=name)
+    print('{}: {}'.format(name, maxpool.get_shape()))
+    return maxpool
+
+
+def avg_pool(x, ksize, stride, scope):
+    """Create an average pooling layer."""
+    return tf.nn.avg_pool3d(x,
+                            ksize=[1, ksize, ksize, ksize, 1],
+                            strides=[1, stride, stride, stride, 1],
+                            padding="VALID",
+                            name=scope)
 
 
 def batch_norm(inputs, is_training, scope='BN', decay=0.999, epsilon=1e-3):

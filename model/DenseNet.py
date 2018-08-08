@@ -1,6 +1,6 @@
 import tensorflow as tf
 from model.base_model import BaseModel
-from model.ops import conv_3d, deconv_3d, BN_Relu_conv_3d, max_pool, batch_norm, Relu, drop_out
+from model.ops import conv_3d, deconv_3d, BN_Relu_conv_3d, max_pool, batch_norm, Relu, drop_out, avg_pool
 from utils import get_num_channels
 
 
@@ -38,7 +38,7 @@ class DenseNet(BaseModel):
                         x = tf.concat((x, level), axis=-1)
                         print('{}: {}'.format('Encoder_level' + str(l + 1), x.get_shape()))
                         feature_list.append(x)
-                        x = self.down_conv(x)
+                        x = self.transition_down(x, scope='TD_' + str(l + 1))
 
             with tf.variable_scope('Bottom_level'):
                 x = self.dense_block(x, self.bottom_convs)
@@ -49,7 +49,7 @@ class DenseNet(BaseModel):
                     with tf.variable_scope('level_' + str(l + 1)):
                         f = feature_list[l]
                         out_shape = shape_list[l]
-                        x = self.up_conv(x, self.num_blocks[l], out_shape=out_shape)
+                        x = self.transition_up(x, out_shape=out_shape, scope='TU_' + str(l + 1))
                         stack = tf.concat((x, f), axis=-1)
                         print('{}: {}'.format('Decoder_level' + str(l + 1), x.get_shape()))
                         x = self.dense_block(stack, self.num_blocks[l])
@@ -83,37 +83,31 @@ class DenseNet(BaseModel):
 
     def bottleneck_block(self, x, scope):
         with tf.variable_scope(scope):
-            x = batch_norm(x, is_training=self.is_training, scope='batch1')
+            x = batch_norm(x, is_training=self.is_training, scope='BN1')
             x = Relu(x)
             x = conv_3d(x, filter_size=1, num_filters=4 * self.k, layer_name='conv1')
             x = drop_out(x, keep_prob=self.keep_prob)
 
-            x = batch_norm(x, is_training=self.is_training, scope='batch2')
+            x = batch_norm(x, is_training=self.is_training, scope='BN2')
             x = Relu(x)
             x = conv_3d(x, filter_size=3, num_filters=self.k, layer_name='conv2')
             x = drop_out(x, keep_prob=self.keep_prob)
             return x
 
-    def transition_down(self, x):
-        num_out_channels = get_num_channels(x)
-        x = BN_Relu_conv_3d(inputs=x,
-                            filter_size=1,
-                            num_filters=num_out_channels,
-                            layer_name='conv_down',
-                            stride=1,
-                            add_batch_norm=self.conf.use_BN,
-                            is_train=self.is_training,
-                            use_relu=True)
-        x = tf.nn.dropout(x, self.keep_prob)
-        x = max_pool(x, self.conf.pool_filter_size, name='maxpool')
-        return x
+    def transition_down(self, x, scope):
+        with tf.variable_scope(scope):
+            x = batch_norm(x, is_training=self.is_training, scope='BN')
+            x = Relu(x)
+            x = conv_3d(x, filter_size=1, num_filters=self.k, layer_name='conv1')
+            x = drop_out(x, keep_prob=self.keep_prob)
+            x = avg_pool(x, ksize=2, stride=2, scope='avg_pool')
+            return x
 
-    def transition_up(self, x, num_out_channels, out_shape):
-        num_out_channels = num_out_channels * self.conf.start_channel_num  # x.get_shape()[-1]
+    def transition_up(self, x, out_shape, scope):
         x = deconv_3d(inputs=x,
                       filter_size=3,
-                      num_filters=num_out_channels,
-                      layer_name='conv_up',
+                      num_filters=self.k,
+                      layer_name=scope,
                       stride=2,
                       add_batch_norm=False,
                       is_train=self.is_training,
