@@ -27,7 +27,7 @@ def bias_variable(name, shape):
 
 
 def conv_3d(inputs, filter_size, num_filters, layer_name, stride=1, is_train=True,
-            batch_norm=False, add_reg=False, activation=tf.identity):
+            add_batch_norm=False, add_reg=False, activation=tf.identity):
     """
     Create a 3D convolution layer
     :param inputs: input array
@@ -35,7 +35,7 @@ def conv_3d(inputs, filter_size, num_filters, layer_name, stride=1, is_train=Tru
     :param num_filters: number of filters (or output feature maps)
     :param layer_name: layer name
     :param stride: convolution filter stride
-    :param batch_norm: boolean to use batch norm (or not)
+    :param add_batch_norm: boolean to use batch norm (or not)
     :param is_train: boolean to differentiate train and test (useful when applying batch normalization)
     :param add_reg: boolean to add norm-2 regularization (or not)
     :param activation: type of activation to be applied
@@ -51,8 +51,8 @@ def conv_3d(inputs, filter_size, num_filters, layer_name, stride=1, is_train=Tru
                              strides=[1, stride, stride, stride, 1],
                              padding="SAME")
         print('{}: {}'.format(layer_name, layer.get_shape()))
-        if batch_norm:
-            layer = batch_norm_wrapper(layer, is_train)
+        if add_batch_norm:
+            layer = batch_norm(layer, is_train)
         else:
             biases = bias_variable(layer_name, [num_filters])
             layer += biases
@@ -62,7 +62,7 @@ def conv_3d(inputs, filter_size, num_filters, layer_name, stride=1, is_train=Tru
     return layer
 
 
-def deconv_3d(inputs, filter_size, num_filters, layer_name, stride=1, batch_norm=False,
+def deconv_3d(inputs, filter_size, num_filters, layer_name, stride=1, add_batch_norm=False,
               is_train=True, add_reg=False, activation=tf.identity, out_shape=None):
     """
     Create a 3D transposed-convolution layer
@@ -71,7 +71,7 @@ def deconv_3d(inputs, filter_size, num_filters, layer_name, stride=1, batch_norm
     :param num_filters: number of filters (or output feature maps)
     :param layer_name: layer name
     :param stride: convolution filter stride
-    :param batch_norm: boolean to use batch norm (or not)
+    :param add_batch_norm: boolean to use batch norm (or not)
     :param is_train: boolean to differentiate train and test (useful when applying batch normalization)
     :param add_reg: boolean to add norm-2 regularization (or not)
     :param activation: type of activation to be applied
@@ -91,8 +91,8 @@ def deconv_3d(inputs, filter_size, num_filters, layer_name, stride=1, batch_norm
                                        strides=[1, stride, stride, stride, 1],
                                        padding="SAME")
         print('{}: {}'.format(layer_name, layer.get_shape()))
-        if batch_norm:
-            layer = batch_norm_wrapper(layer, is_train)
+        if add_batch_norm:
+            layer = batch_norm(layer, is_train)
         else:
             biases = bias_variable(layer_name, [num_filters])
             layer += biases
@@ -103,7 +103,7 @@ def deconv_3d(inputs, filter_size, num_filters, layer_name, stride=1, batch_norm
 
 
 def BN_Relu_conv_3d(inputs, filter_size, num_filters, layer_name, stride=1, is_train=True,
-                    batch_norm=True, use_relu=True, add_reg=False):
+                    add_batch_norm=True, use_relu=True, add_reg=False):
     """
     Create a BN, ReLU, and 3D convolution layer
     :param inputs: input array
@@ -111,7 +111,7 @@ def BN_Relu_conv_3d(inputs, filter_size, num_filters, layer_name, stride=1, is_t
     :param num_filters: number of filters (or output feature maps)
     :param layer_name: layer name
     :param stride: convolution filter stride
-    :param batch_norm: boolean to use batch norm (or not)
+    :param add_batch_norm: boolean to use batch norm (or not)
     :param is_train: boolean to differentiate train and test (useful when applying batch normalization)
     :param add_reg: boolean to add norm-2 regularization (or not)
     :param use_relu:
@@ -119,8 +119,8 @@ def BN_Relu_conv_3d(inputs, filter_size, num_filters, layer_name, stride=1, is_t
     """
     num_in_channel = get_num_channels(inputs)
     with tf.variable_scope(layer_name):
-        if batch_norm:
-            inputs = batch_norm_wrapper(inputs, is_train)
+        if add_batch_norm:
+            inputs = batch_norm(inputs, is_train)
         if use_relu:
             inputs = tf.nn.relu(inputs)
         shape = [filter_size, filter_size, filter_size, num_in_channel, num_filters]
@@ -152,31 +152,33 @@ def max_pool(x, ksize, name):
         return maxpool
 
 
-def batch_norm_wrapper(inputs, is_training, decay=0.999, epsilon=1e-3):
+def batch_norm(inputs, is_training, scope='BN', decay=0.999, epsilon=1e-3):
     """
     creates a batch normalization layer
     :param inputs: input array
     :param is_training: boolean for differentiating train and test
+    :param scope: scope name
     :param decay:
     :param epsilon:
     :return: normalized input
     """
-    scale = tf.Variable(tf.ones([inputs.get_shape()[-1]]))
-    beta = tf.Variable(tf.zeros([inputs.get_shape()[-1]]))
-    pop_mean = tf.Variable(tf.zeros([inputs.get_shape()[-1]]), trainable=False)
-    pop_var = tf.Variable(tf.ones([inputs.get_shape()[-1]]), trainable=False)
+    with tf.variable_scope(scope):
+        scale = tf.Variable(tf.ones([inputs.get_shape()[-1]]))
+        beta = tf.Variable(tf.zeros([inputs.get_shape()[-1]]))
+        pop_mean = tf.Variable(tf.zeros([inputs.get_shape()[-1]]), trainable=False)
+        pop_var = tf.Variable(tf.ones([inputs.get_shape()[-1]]), trainable=False)
 
-    if is_training:
-        if len(inputs.get_shape().as_list()) == 5:  # For 3D convolutional layers
-            batch_mean, batch_var = tf.nn.moments(inputs, [0, 1, 2, 3])
-        else:  # For fully-connected layers
-            batch_mean, batch_var = tf.nn.moments(inputs, [0])
-        train_mean = tf.assign(pop_mean, pop_mean * decay + batch_mean * (1 - decay))
-        train_var = tf.assign(pop_var, pop_var * decay + batch_var * (1 - decay))
-        with tf.control_dependencies([train_mean, train_var]):
-            return tf.nn.batch_normalization(inputs, batch_mean, batch_var, beta, scale, epsilon)
-    else:
-        return tf.nn.batch_normalization(inputs, pop_mean, pop_var, beta, scale, epsilon)
+        if is_training:
+            if len(inputs.get_shape().as_list()) == 5:  # For 3D convolutional layers
+                batch_mean, batch_var = tf.nn.moments(inputs, [0, 1, 2, 3])
+            else:  # For fully-connected layers
+                batch_mean, batch_var = tf.nn.moments(inputs, [0])
+            train_mean = tf.assign(pop_mean, pop_mean * decay + batch_mean * (1 - decay))
+            train_var = tf.assign(pop_var, pop_var * decay + batch_var * (1 - decay))
+            with tf.control_dependencies([train_mean, train_var]):
+                return tf.nn.batch_normalization(inputs, batch_mean, batch_var, beta, scale, epsilon)
+        else:
+            return tf.nn.batch_normalization(inputs, pop_mean, pop_var, beta, scale, epsilon)
 
 
 def prelu(x, name=None):
@@ -190,3 +192,11 @@ def prelu(x, name=None):
         alpha = tf.get_variable('alpha', shape=x.get_shape()[-1], dtype=x.dtype,
                                 initializer=tf.constant_initializer(0.1))
         return tf.maximum(0.0, x) + alpha * tf.minimum(0.0, x)
+
+
+def Relu(x):
+    return tf.nn.relu(x)
+
+
+def drop_out(x, keep_prob):
+    return tf.nn.dropout(x, keep_prob)
