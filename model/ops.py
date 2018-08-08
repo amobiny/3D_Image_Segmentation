@@ -50,7 +50,7 @@ def conv_3d(inputs, filter_size, num_filters, layer_name, stride=1, is_train=Tru
                              filter=weights,
                              strides=[1, stride, stride, stride, 1],
                              padding="SAME")
-        print('{}: {}'.format(layer_name, layer.get_shape()))
+        # print('{}: {}'.format(layer_name, layer.get_shape()))
         if add_batch_norm:
             layer = batch_norm(layer, is_train)
         else:
@@ -90,12 +90,12 @@ def deconv_3d(inputs, filter_size, num_filters, layer_name, stride=1, add_batch_
                                        output_shape=out_shape,
                                        strides=[1, stride, stride, stride, 1],
                                        padding="SAME")
-        print('{}: {}'.format(layer_name, layer.get_shape()))
+        # print('{}: {}'.format(layer_name, layer.get_shape()))
         if add_batch_norm:
             layer = batch_norm(layer, is_train)
-        else:
-            biases = bias_variable(layer_name, [num_filters])
-            layer += biases
+        # else:
+        #     biases = bias_variable(layer_name, [num_filters])
+        #     layer += biases
         layer = activation(layer)
         if add_reg:
             tf.add_to_collection('weights', weights)
@@ -208,3 +208,7 @@ def Relu(x):
 
 def drop_out(x, keep_prob):
     return tf.nn.dropout(x, keep_prob)
+
+
+def concatenation(layers):
+    return tf.concat(layers, axis=-1)

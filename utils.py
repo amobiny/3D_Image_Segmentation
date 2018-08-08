@@ -1,5 +1,5 @@
 import tensorflow as tf
-import tensorlayer as tl
+# import tensorlayer as tl
 import numpy as np
 
 
@@ -27,13 +27,13 @@ def cross_entropy(y, logits, n_class):
 
 
 def dice_coeff(y, logits):
-    # eps = 1e-5
-    # prediction = pixel_wise_softmax(logits)
-    # intersection = tf.reduce_sum(prediction * y)
-    # union = eps + tf.reduce_sum(prediction) + tf.reduce_sum(y)
-    # dice_loss = 1 - (2 * intersection / union)
-    outputs = tl.act.pixel_wise_softmax(logits)
-    dice_loss = 1 - tl.cost.dice_coe(outputs, y, loss_type='jaccard', axis=(1, 2, 3, 4))
+    eps = 1e-5
+    prediction = pixel_wise_softmax(logits)
+    intersection = tf.reduce_sum(prediction * y)
+    union = eps + tf.reduce_sum(prediction) + tf.reduce_sum(y)
+    dice_loss = 1 - (2 * intersection / union)
+    # outputs = tl.act.pixel_wise_softmax(logits)
+    # dice_loss = 1 - tl.cost.dice_coe(outputs, y, loss_type='jaccard', axis=(1, 2, 3, 4))
     return dice_loss
 
 
@@ -87,7 +87,7 @@ def write_spec(args):
     config_file.write('data_augmentation: ' + str(args.data_augment) + '\n')
     config_file.write('    max_angle: ' + str(args.max_angle) + '\n')
     config_file.write('num_training: ' + str(args.num_tr) + '\n')
-    config_file.write('drop_out_rate: ' + str(args.drop_out_rate) + '\n')
+    config_file.write('keep_prob: ' + str(args.keep_prob) + '\n')
     config_file.write('batch_normalization: ' + str(args.use_BN) + '\n')
     config_file.write('kernel_size: ' + str(args.filter_size) + '\n')
     config_file.close()

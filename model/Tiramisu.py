@@ -16,9 +16,6 @@ class Tiramisu(BaseModel):
         self.bottom_convs = bottom_convs
         self.k_size = self.conf.filter_size
         self.down_conv_factor = 2
-        # BaseModel.__init__(self, sess, conf)
-
-        # super().__init__(sess, conf)  Python3
         self.build_network(self.x)
         self.configure_network()
 
@@ -29,7 +26,7 @@ class Tiramisu(BaseModel):
             shape_list = list()
 
             with tf.variable_scope('input'):
-                x = conv_3d(x, self.k_size, 64, 'input_layer', batch_norm=False, is_train=self.is_training)
+                x = conv_3d(x, self.k_size, 64, 'input_layer', add_batch_norm=False, is_train=self.is_training)
                 # x = tf.nn.dropout(x, self.keep_prob)
                 print('{}: {}'.format('input_layer', x.get_shape()))
 
