@@ -25,7 +25,7 @@ class DenseNet(BaseModel):
             feature_list = list()
             shape_list = list()
             x = conv_3d(x_input, filter_size=3, num_filters=2 * self.k, stride=2, layer_name='conv1',
-                        add_batch_norm=False, is_train=self.is_training)
+                        add_batch_norm=False, is_train=self.is_training, add_reg=self.conf.use_reg)
             print('conv1 shape: {}'.format(x.get_shape()))
             shape_list.append(tf.shape(x[:, :, :, :, :self.k]))
 
@@ -61,11 +61,11 @@ class DenseNet(BaseModel):
                 out_shape = tf.shape(tf.tile(x_input, [1, 1, 1, 1, out_filters]))
                 x = self.transition_up(x, out_shape, 'TD_out', num_filters=out_filters)
                 print('TU_out shape: {}'.format(x.get_shape()))
-                x = BN_Relu_conv_3d(x, 3, 256, 'pre_output_layer',
+                x = BN_Relu_conv_3d(x, 3, 256, 'pre_output_layer', add_reg=self.conf.use_reg,
                                     is_train=self.is_training)
                 print('pre_out shape: {}'.format(x.get_shape()))
                 self.logits = BN_Relu_conv_3d(x, 1, self.conf.num_cls, 'Output_layer',
-                                              is_train=self.is_training)
+                                              add_reg=self.conf.use_reg, is_train=self.is_training)
                 print('{}: {}'.format('output', self.logits.get_shape()))
 
     def dense_block(self, layer_input, num_blocks, scope):
@@ -85,12 +85,12 @@ class DenseNet(BaseModel):
         with tf.variable_scope(scope):
             x = batch_norm(x, is_training=self.is_training, scope='BN1')
             x = Relu(x)
-            x = conv_3d(x, filter_size=1, num_filters=4 * self.k, layer_name='conv1')
+            x = conv_3d(x, filter_size=1, num_filters=4 * self.k, layer_name='conv1', add_reg=self.conf.use_reg)
             x = drop_out(x, keep_prob=self.keep_prob)
 
             x = batch_norm(x, is_training=self.is_training, scope='BN2')
             x = Relu(x)
-            x = conv_3d(x, filter_size=3, num_filters=self.k, layer_name='conv2')
+            x = conv_3d(x, filter_size=3, num_filters=self.k, layer_name='conv2', add_reg=self.conf.use_reg)
             x = drop_out(x, keep_prob=self.keep_prob)
             return x
 
@@ -98,7 +98,7 @@ class DenseNet(BaseModel):
         with tf.variable_scope(scope):
             x = batch_norm(x, is_training=self.is_training, scope='BN')
             x = Relu(x)
-            x = conv_3d(x, filter_size=1, num_filters=self.k, layer_name='conv')
+            x = conv_3d(x, filter_size=1, num_filters=self.k, layer_name='conv', add_reg=self.conf.use_reg)
             x = drop_out(x, keep_prob=self.keep_prob)
             x = avg_pool(x, ksize=2, stride=2, scope='avg_pool')
             return x
@@ -114,6 +114,7 @@ class DenseNet(BaseModel):
                           num_filters=num_filters,
                           layer_name='deconv',
                           stride=2,
+                          add_reg=self.conf.use_reg,
                           add_batch_norm=False,
                           is_train=self.is_training,
                           out_shape=out_shape)

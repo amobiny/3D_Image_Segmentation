@@ -58,7 +58,7 @@ def conv_3d(inputs, filter_size, num_filters, layer_name, stride=1, is_train=Tru
             layer += biases
         layer = activation(layer)
         if add_reg:
-            tf.add_to_collection('reg_weights', weights)
+            tf.add_to_collection('weights', weights)
     return layer
 
 
@@ -130,7 +130,7 @@ def BN_Relu_conv_3d(inputs, filter_size, num_filters, layer_name, stride=1, is_t
                              strides=[1, stride, stride, stride, 1],
                              padding="SAME")
         if add_reg:
-            tf.add_to_collection('reg_weights', weights)
+            tf.add_to_collection('weights', weights)
     return layer
 
 

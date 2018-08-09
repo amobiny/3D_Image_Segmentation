@@ -26,7 +26,8 @@ class Tiramisu(BaseModel):
             shape_list = list()
 
             with tf.variable_scope('input'):
-                x = conv_3d(x, self.k_size, 64, 'input_layer', add_batch_norm=False, is_train=self.is_training)
+                x = conv_3d(x, self.k_size, 64, 'input_layer', add_batch_norm=False,
+                            add_reg=self.conf.use_reg, is_train=self.is_training)
                 # x = tf.nn.dropout(x, self.keep_prob)
                 print('{}: {}'.format('input_layer', x.get_shape()))
 
@@ -58,11 +59,11 @@ class Tiramisu(BaseModel):
 
             with tf.variable_scope('output'):
                 # x = BN_Relu_conv_3d(x, self.k_size, self.conf.num_cls, 'Output_layer', batch_norm=True,
-                #                     is_train=self.is_training)
+                #                     add_reg=self.conf.use_reg, is_train=self.is_training)
                 # x = tf.nn.dropout(x,self.keep_prob)
                 print('{}: {}'.format('out_block_input', stack.get_shape()))
                 self.logits = BN_Relu_conv_3d(stack, 1, self.conf.num_cls, 'Output_layer', add_batch_norm=True,
-                                              is_train=self.is_training)
+                                              add_reg=self.conf.use_reg, is_train=self.is_training)
                 print('{}: {}'.format('output', self.logits.get_shape()))
 
     def dense_block(self, layer_input, num_convolutions):
@@ -77,6 +78,7 @@ class Tiramisu(BaseModel):
                                     num_filters=self.conf.start_channel_num,
                                     layer_name='conv_' + str(i + 1),
                                     add_batch_norm=self.conf.use_BN,
+                                    add_reg=self.conf.use_reg,
                                     use_relu=True,
                                     is_train=self.is_training)
             layer = tf.nn.dropout(layer, self.keep_prob)
@@ -91,6 +93,7 @@ class Tiramisu(BaseModel):
                             num_filters=num_out_channels,
                             layer_name='conv_down',
                             stride=1,
+                            add_reg=self.conf.use_reg,
                             add_batch_norm=self.conf.use_BN,
                             is_train=self.is_training,
                             use_relu=True)
@@ -105,6 +108,7 @@ class Tiramisu(BaseModel):
                       num_filters=num_out_channels,
                       layer_name='conv_up',
                       stride=2,
+                      add_reg=self.conf.use_reg,
                       add_batch_norm=False,
                       is_train=self.is_training,
                       out_shape=out_shape)

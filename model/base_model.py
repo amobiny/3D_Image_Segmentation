@@ -30,11 +30,14 @@ class BaseModel(object):
             elif self.conf.loss_type == 'dice':
                 with tf.name_scope('dice_coefficient'):
                     loss = dice_coeff(y_one_hot, self.logits)
-            with tf.name_scope('L2_loss'):
-                l2_loss = tf.reduce_sum(
-                    self.conf.lmbda * tf.stack([tf.nn.l2_loss(v) for v in tf.get_collection('reg_weights')]))
             with tf.name_scope('total'):
-                self.total_loss = loss + l2_loss
+                if self.conf.use_reg:
+                    with tf.name_scope('L2_loss'):
+                        l2_loss = tf.reduce_sum(
+                            self.conf.lmbda * tf.stack([tf.nn.l2_loss(v) for v in tf.get_collection('weights')]))
+                        self.total_loss = loss + l2_loss
+                else:
+                    self.total_loss = loss
                 self.mean_loss, self.mean_loss_op = tf.metrics.mean(self.total_loss)
 
     def accuracy_func(self):
