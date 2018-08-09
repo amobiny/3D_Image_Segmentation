@@ -24,11 +24,9 @@ class DenseNet(BaseModel):
         with tf.variable_scope('DenseNet'):
             feature_list = list()
             shape_list = list()
-
-            with tf.variable_scope('input'):
-                x = conv_3d(x_input, filter_size=3, num_filters=2 * self.k, stride=2, layer_name='conv1',
-                            add_batch_norm=False, is_train=self.is_training)
-                print('conv1 shape: {}'.format(x.get_shape()))
+            x = conv_3d(x_input, filter_size=3, num_filters=2 * self.k, stride=2, layer_name='conv1',
+                        add_batch_norm=False, is_train=self.is_training)
+            print('conv1 shape: {}'.format(x.get_shape()))
             shape_list.append(tf.shape(x[:, :, :, :, :self.k]))
 
             with tf.variable_scope('Encoder'):
@@ -62,6 +60,10 @@ class DenseNet(BaseModel):
                 out_filters = x.get_shape().as_list()[-1]
                 out_shape = tf.shape(tf.tile(x_input, [1, 1, 1, 1, out_filters]))
                 x = self.transition_up(x, out_shape, 'TD_out', num_filters=out_filters)
+                print('TU_out shape: {}'.format(x.get_shape()))
+                x = BN_Relu_conv_3d(x, 1, 256, 'pre_output_layer',
+                                    is_train=self.is_training)
+                print('pre_out shape: {}'.format(x.get_shape()))
                 self.logits = BN_Relu_conv_3d(x, 1, self.conf.num_cls, 'Output_layer',
                                               is_train=self.is_training)
                 print('{}: {}'.format('output', self.logits.get_shape()))

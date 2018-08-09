@@ -9,7 +9,7 @@ flags.DEFINE_integer('step_num', 100, 'Reload step to test the model')
 # Training logs
 flags.DEFINE_integer('max_step', 250000, '# of step for training')
 flags.DEFINE_integer('SAVE_FREQ', 1000, 'Number of steps to save model')
-flags.DEFINE_integer('SUMMARY_FREQ', 100, 'Number of step to save summary')
+flags.DEFINE_integer('SUMMARY_FREQ', 50, 'Number of step to save summary')
 flags.DEFINE_integer('VAL_FREQ', 100, 'Number of step to evaluate the network on Validation data')
 flags.DEFINE_float('init_lr', 1e-3, 'Initial learning rate')
 flags.DEFINE_float('lr_min', 1e-5, 'Minimum learning rate')
@@ -22,9 +22,9 @@ flags.DEFINE_integer('val_batch_size', 2, 'training batch size')
 
 # data
 flags.DEFINE_integer('num_tr', 20, 'Total number of training images')
-flags.DEFINE_string('train_data_dir', './data/train_data/', 'Training data directory')
-flags.DEFINE_string('valid_data_dir', './data/valid_data/', 'Validation data directory')
-flags.DEFINE_string('test_data_dir', './data/test_data/', 'Test data directory')
+flags.DEFINE_string('train_data_dir', './data/', 'Training data directory')
+flags.DEFINE_string('valid_data_dir', './data/', 'Validation data directory')
+flags.DEFINE_string('test_data_dir', './data/', 'Test data directory')
 flags.DEFINE_boolean('data_augment', True, 'Adds augmentation to data')
 flags.DEFINE_integer('max_angle', 40, 'Maximum rotation angle along each axis; when applying augmentation')
 flags.DEFINE_integer('height', 64, 'Network input height size')
@@ -45,6 +45,6 @@ flags.DEFINE_integer('start_channel_num', 16, 'start number of outputs for the f
 flags.DEFINE_integer('filter_size', 3, 'Filter size for the conv and deconv layers')
 flags.DEFINE_integer('pool_filter_size', 2, 'Filter size for pooling layers')
 flags.DEFINE_float('keep_prob', 0.8, 'Probability of keeping a unit in drop-out')
-flags.DEFINE_integer('growth_rate', 16, 'Growth rate of the DenseNet')
+flags.DEFINE_integer('growth_rate', 32, 'Growth rate of the DenseNet')
 
 args = tf.app.flags.FLAGS
