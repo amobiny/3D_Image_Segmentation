@@ -26,7 +26,7 @@ class Tiramisu(BaseModel):
             shape_list = list()
 
             with tf.variable_scope('input'):
-                x = conv_3d(x, self.k_size, 64, 'input_layer', add_batch_norm=False,
+                x = conv_3d(x, self.k_size, 48, 'input_layer', add_batch_norm=False,
                             add_reg=self.conf.use_reg, is_train=self.is_training)
                 # x = tf.nn.dropout(x, self.keep_prob)
                 print('{}: {}'.format('input_layer', x.get_shape()))
@@ -49,8 +49,11 @@ class Tiramisu(BaseModel):
                 for l in reversed(range(self.num_levels)):
                     with tf.variable_scope('level_' + str(l + 1)):
                         f = feature_list[l]
-                        out_shape = shape_list[l]
-                        x = self.up_conv(x, self.num_convs[l], out_shape=out_shape)
+                        # out_shape = shape_list[l]
+                        shape = x.get_shape().as_list()
+                        out_shape = [self.conf.batch_size] + list(map(lambda x: x*2, shape[1:-1])) + [shape[-1]]
+                        out_shape = tf.shape(tf.zeros((out_shape)))
+                        x = self.up_conv(x, out_shape=out_shape)
                         stack = tf.concat((x, f), axis=-1)
                         print('{}: {}'.format('Decoder_level' + str(l + 1), x.get_shape()))
                         x = self.dense_block(stack, self.num_convs[l])
@@ -69,9 +72,6 @@ class Tiramisu(BaseModel):
     def dense_block(self, layer_input, num_convolutions):
         x = layer_input
         layers = []
-        # n_channels = get_num_channels(x)
-        # if n_channels == self.conf.channel:
-        #    n_channels = self.conf.start_channel_num
         for i in range(num_convolutions):
             layer = BN_Relu_conv_3d(inputs=x,
                                     filter_size=self.k_size,
@@ -101,8 +101,8 @@ class Tiramisu(BaseModel):
         x = max_pool(x, self.conf.pool_filter_size, name='maxpool')
         return x
 
-    def up_conv(self, x, num_out_channels, out_shape):
-        num_out_channels = num_out_channels * self.conf.start_channel_num  # x.get_shape()[-1]
+    def up_conv(self, x, out_shape):
+        num_out_channels = x.get_shape().as_list()[-1]
         x = deconv_3d(inputs=x,
                       filter_size=3,
                       num_filters=num_out_channels,
