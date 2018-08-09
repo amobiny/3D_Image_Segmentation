@@ -15,8 +15,8 @@ flags.DEFINE_float('lr_min', 1e-5, 'Minimum learning rate')
 
 # Hyper-parameters
 flags.DEFINE_string('loss_type', 'dice', 'cross-entropy or dice')
-flags.DEFINE_boolean('use_reg', True, 'Use regularization')
-flags.DEFINE_float('lmbda', 1e-3, 'L2 regularization coefficient')
+flags.DEFINE_boolean('use_reg', False, 'Use L2 regularization on weights')
+flags.DEFINE_float('lmbda', 1e-4, 'L2 regularization coefficient')
 flags.DEFINE_integer('batch_size', 2, 'training batch size')
 flags.DEFINE_integer('val_batch_size', 2, 'training batch size')
 

@@ -1,6 +1,6 @@
 import tensorflow as tf
 from Data_Loader import DataLoader
-from utils import cross_entropy, dice_coeff
+from utils import cross_entropy, dice_coeff, compute_iou
 import os
 import numpy as np
 
@@ -130,13 +130,19 @@ class BaseModel(object):
 
     def evaluate(self, train_step):
         self.sess.run(tf.local_variables_initializer())
+        all_y = np.zeros((0, self.conf.height, self.conf.width, self.conf.depth))
+        all_y_pred = np.zeros((0, self.conf.height, self.conf.width, self.conf.depth))
         for step in range(self.num_val_batch):
             start = step * self.conf.val_batch_size
             end = (step + 1) * self.conf.val_batch_size
             x_val, y_val = self.data_reader.next_batch(start, end, mode='valid')
             feed_dict = {self.x: x_val, self.y: y_val, self.keep_prob: 1}
             self.sess.run([self.mean_loss_op, self.mean_accuracy_op], feed_dict=feed_dict)
-
+            y, y_pred = self.sess.run([self.y, self.y_pred], feed_dict=feed_dict)
+            all_y = np.concatenate((all_y, y), axis=0)
+            all_y_pred = np.concatenate((all_y_pred, y_pred), axis=0)
+        IOU = compute_iou(all_y_pred, all_y, num_cls=self.conf.num_cls)
+        mean_IOU = np.mean(IOU)
         summary_valid = self.sess.run(self.merged_summary, feed_dict=feed_dict)
         valid_loss, valid_acc = self.sess.run([self.mean_loss, self.mean_accuracy])
         self.save_summary(summary_valid, train_step + self.conf.reload_step)
@@ -146,10 +152,12 @@ class BaseModel(object):
             self.save(train_step + self.conf.reload_step)
         else:
             improved_str = ''
-        print('-' * 30 + 'Validation' + '-' * 30)
+        print('-' * 25 + 'Validation' + '-' * 25)
         print('After {0} training step: val_loss= {1:.4f}, val_acc={2:.01%}{3}'
               .format(train_step, valid_loss, valid_acc, improved_str))
-        print('-' * 70)
+        print('BackGround={0:.01%}, Neuron={1:.01%}, Vessel={2:.01%}, Average={3:.01%}'
+              .format(IOU[0], IOU[1], IOU[2], mean_IOU))
+        print('-' * 60)
 
     def test(self, step_num):
         self.sess.run(tf.local_variables_initializer())
@@ -159,16 +167,24 @@ class BaseModel(object):
         self.num_test_batch = int(self.numTest / self.conf.val_batch_size)
         self.is_train = False
         self.sess.run(tf.local_variables_initializer())
+        all_y = np.zeros((0, self.conf.height, self.conf.width, self.conf.depth))
+        all_y_pred = np.zeros((0, self.conf.height, self.conf.width, self.conf.depth))
         for step in range(self.num_test_batch):
             start = step * self.conf.val_batch_size
             end = (step + 1) * self.conf.val_batch_size
             x_test, y_test = self.data_reader.next_batch(start, end, mode='test')
             feed_dict = {self.x: x_test, self.y: y_test, self.keep_prob: 1}
             self.sess.run([self.mean_loss_op, self.mean_accuracy_op], feed_dict=feed_dict)
+            y, y_pred = self.sess.run([self.y, self.y_pred], feed_dict=feed_dict)
+            all_y = np.concatenate((all_y, y), axis=0)
+            all_y_pred = np.concatenate((all_y_pred, y_pred), axis=0)
+        IOU = compute_iou(all_y_pred, all_y, num_cls=self.conf.num_cls)
+        mean_IOU = np.mean(IOU)
         test_loss, test_acc = self.sess.run([self.mean_loss, self.mean_accuracy])
         print('-' * 18 + 'Test Completed' + '-' * 18)
-        print('test_loss= {0:.4f}, test_acc={1:.01%}'.
-              format(test_loss, test_acc))
+        print('test_loss= {0:.4f}, test_acc={1:.01%}'.format(test_loss, test_acc))
+        print('BackGround={0:.01%}, Neuron={1:.01%}, Vessel={2:.01%}, Average={3:.01%}'
+              .format(IOU[0], IOU[1], IOU[2], mean_IOU))
         print('-' * 50)
 
     def save(self, step):

@@ -1,5 +1,6 @@
 import tensorflow as tf
 import tensorlayer as tl
+from sklearn.metrics import confusion_matrix
 import numpy as np
 
 
@@ -91,3 +92,16 @@ def write_spec(args):
     config_file.write('batch_normalization: ' + str(args.use_BN) + '\n')
     config_file.write('kernel_size: ' + str(args.filter_size) + '\n')
     config_file.close()
+
+
+def compute_iou(y_pred, y_label, num_cls):
+    y_pred = y_pred.flatten()
+    y_label = y_label.flatten()
+    current = confusion_matrix(y_label, y_pred, labels=list(range(num_cls)))
+    # compute mean iou
+    intersection = np.diag(current)
+    ground_truth_set = current.sum(axis=1)
+    predicted_set = current.sum(axis=0)
+    union = ground_truth_set + predicted_set - intersection
+    IoU = intersection / union.astype(np.float32)
+    return IoU
