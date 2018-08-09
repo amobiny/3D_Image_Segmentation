@@ -94,6 +94,7 @@ class BaseModel(object):
 
     def train(self):
         self.sess.run(tf.local_variables_initializer())
+        self.best_validation_accuracy = 0
         if self.conf.reload_step > 0:
             self.reload(self.conf.reload_step)
             print('----> Continue Training from step #{}'.format(self.conf.reload_step))
@@ -124,9 +125,6 @@ class BaseModel(object):
                 self.is_training = False
                 self.evaluate(train_step)
 
-            if train_step % self.conf.SAVE_FREQ == 0:
-                self.save(train_step + self.conf.reload_step)
-
     def evaluate(self, train_step):
         self.sess.run(tf.local_variables_initializer())
         for step in range(self.num_val_batch):
@@ -139,8 +137,15 @@ class BaseModel(object):
         summary_valid = self.sess.run(self.merged_summary, feed_dict=feed_dict)
         valid_loss, valid_acc = self.sess.run([self.mean_loss, self.mean_accuracy])
         self.save_summary(summary_valid, train_step + self.conf.reload_step)
+        if valid_acc > self.best_validation_accuracy:
+            self.best_validation_accuracy = valid_acc
+            improved_str = '(improved)'
+            self.save(train_step + self.conf.reload_step)
+        else:
+            improved_str = ''
         print('-' * 30 + 'Validation' + '-' * 30)
-        print('After {0} training step: val_loss= {1:.4f}, val_acc={2:.01%}'.format(train_step, valid_loss, valid_acc))
+        print('After {0} training step: val_loss= {1:.4f}, val_acc={2:.01%}{3}'
+              .format(train_step, valid_loss, valid_acc, improved_str))
         print('-' * 70)
 
     def test(self, step_num):

@@ -61,7 +61,7 @@ class DenseNet(BaseModel):
                 out_shape = tf.shape(tf.tile(x_input, [1, 1, 1, 1, out_filters]))
                 x = self.transition_up(x, out_shape, 'TD_out', num_filters=out_filters)
                 print('TU_out shape: {}'.format(x.get_shape()))
-                x = BN_Relu_conv_3d(x, 1, 256, 'pre_output_layer',
+                x = BN_Relu_conv_3d(x, 3, 256, 'pre_output_layer',
                                     is_train=self.is_training)
                 print('pre_out shape: {}'.format(x.get_shape()))
                 self.logits = BN_Relu_conv_3d(x, 1, self.conf.num_cls, 'Output_layer',

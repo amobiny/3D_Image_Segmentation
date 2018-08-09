@@ -1,5 +1,5 @@
 import tensorflow as tf
-# import tensorlayer as tl
+import tensorlayer as tl
 import numpy as np
 
 
@@ -27,13 +27,13 @@ def cross_entropy(y, logits, n_class):
 
 
 def dice_coeff(y, logits):
-    eps = 1e-5
-    prediction = pixel_wise_softmax(logits)
-    intersection = tf.reduce_sum(prediction * y)
-    union = eps + tf.reduce_sum(prediction) + tf.reduce_sum(y)
-    dice_loss = 1 - (2 * intersection / union)
-    # outputs = tl.act.pixel_wise_softmax(logits)
-    # dice_loss = 1 - tl.cost.dice_coe(outputs, y, loss_type='jaccard', axis=(1, 2, 3, 4))
+    # eps = 1e-5
+    # prediction = pixel_wise_softmax(logits)
+    # intersection = tf.reduce_sum(prediction * y)
+    # union = eps + tf.reduce_sum(prediction) + tf.reduce_sum(y)
+    # dice_loss = 1 - (2 * intersection / union)
+    outputs = tl.act.pixel_wise_softmax(logits)
+    dice_loss = 1 - tl.cost.dice_coe(outputs, y, loss_type='jaccard', axis=(1, 2, 3, 4))
     return dice_loss
 
 
