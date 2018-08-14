@@ -4,7 +4,7 @@ import time
 flags = tf.app.flags
 flags.DEFINE_string('mode', 'train', 'train or test')
 flags.DEFINE_integer('reload_step', 0, 'Reload step to continue training')
-flags.DEFINE_integer('step_num', 100, 'Reload step to test the model')
+flags.DEFINE_integer('step_num', 2900, 'Reload step to test the model')
 
 # Training logs
 flags.DEFINE_integer('max_step', 250000, '# of step for training')
@@ -33,7 +33,7 @@ flags.DEFINE_integer('depth', 32, 'Network input depth size')
 flags.DEFINE_integer('channel', 1, 'Network input channel size')
 
 # Directories
-flags.DEFINE_string('run_name', 'run01', 'Run name')
+flags.DEFINE_string('run_name', 'run02', 'Run name')
 flags.DEFINE_string('logdir', './Results/log_dir/', 'Logs directory')
 flags.DEFINE_string('modeldir', './Results/model_dir/', 'Model directory')
 flags.DEFINE_string('model_name', 'model', 'Model file name')
